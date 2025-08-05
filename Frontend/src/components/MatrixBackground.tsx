@@ -3,84 +3,100 @@
 import { useEffect, useRef } from 'react';
 
 interface MatrixBackgroundProps {
-  className?: string;
+    className?: string;
+    opacity?: number;   // global layer opacity
+    fontSize?: number;  // size of characters
+    fade?: number;      // background fade strength per frame
+    speed?: number;     // interval ms (lower = faster)
 }
 
-const MatrixBackground: React.FC<MatrixBackgroundProps> = ({ className = '' }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const MatrixBackground: React.FC<MatrixBackgroundProps> = ({
+    className = '',
+    opacity = 0.5,       // increased from 0.25
+    fontSize = 16,       // increased from 14
+    fade = 0.06,         // slower fade (was 0.08)
+    speed = 28,          // slightly faster refresh (was 30)
+}) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-    // Set canvas size
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-    // Matrix characters
-    const matrix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%+-/~{[|`]}";
-    const matrixArray = matrix.split("");
+        // include more glyphs and some spaces to vary density subtly
+        const matrix =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()[]{}<>/\\|~`+-=_;:.,';
+        const matrixArray = matrix.split('');
 
-    const fontSize = 10;
-    const columns = canvas.width / fontSize;
-    const drops: number[] = [];
+        let columns = Math.floor(canvas.width / (fontSize * 0.9)); // slightly denser columns
+        let drops: number[] = Array(columns).fill(1);
 
-    // Initialize drops
-    for (let x = 0; x < columns; x++) {
-      drops[x] = 1;
-    }
+        const resetDrops = () => {
+            columns = Math.floor(canvas.width / (fontSize * 0.9));
+            drops = Array(columns).fill(1);
+        };
 
-    const draw = () => {
-      // Semi-transparent black background for fade effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const draw = () => {
+            // gentler fade to keep trails brighter/longer
+            ctx.fillStyle = `rgba(0, 0, 0, ${fade})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Green text
-      ctx.fillStyle = '#00ff41';
-      ctx.font = fontSize + 'px monospace';
+            ctx.font = `${fontSize}px monospace`;
 
-      // Loop over drops
-      for (let i = 0; i < drops.length; i++) {
-        // Random character
-        const text = matrixArray[Math.floor(Math.random() * matrixArray.length)];
-        
-        // Draw character
-        ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * 0.5 + 0.1})`;
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrixArray[Math.floor(Math.random() * matrixArray.length)];
 
-        // Reset drop to top randomly
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
+                // raise minimum alpha and bias brighter
+                const alpha = Math.random() * 0.5 + 0.45; // 0.45 - 0.95
+                // slight color shift to brighter green
+                ctx.fillStyle = `rgba(0, 255, 90, ${alpha})`;
 
-        // Increment Y coordinate
-        drops[i]++;
-      }
-    };
+                const x = i * fontSize * 0.9; // match density change
+                const y = drops[i] * fontSize;
+                ctx.fillText(text, x, y);
 
-    const interval = setInterval(draw, 35);
+                // reset more often to keep screen populated
+                if (y > canvas.height && Math.random() > 0.94) {
+                    drops[i] = 0;
+                }
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', resizeCanvas);
-    };
-  }, []);
+                drops[i]++;
+            }
+        };
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`fixed inset-0 pointer-events-none z-0 ${className}`}
-      style={{ opacity: 0.1 }}
-    />
-  );
+        const interval = setInterval(draw, speed);
+
+        const onResize = () => {
+            resizeCanvas();
+            resetDrops();
+        };
+
+        window.addEventListener('resize', onResize);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('resize', onResize);
+        };
+    }, [fontSize, fade, speed]);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className={`fixed inset-0 pointer-events-none z-0 ${className}`}
+            style={{ opacity }}
+        />
+    );
 };
 
 export default MatrixBackground;

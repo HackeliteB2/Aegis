@@ -1,19 +1,14 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from .config import settings
+from typing import Generator
 
-# Convert postgresql:// to postgresql+asyncpg:// for asyncpg
-database_url = settings.DATABASE_URL
-if database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-engine = create_engine(database_url)
+engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 
-def get_db():
+def get_db() -> Generator[Session, None, None]:
+    """Dependency to get database session."""
     db = SessionLocal()
     try:
         yield db
@@ -21,10 +16,17 @@ def get_db():
         db.close()
 
 
+def create_tables():
+    """Create all tables in the database."""
+    from app.models.user import Base as UserBase
+    UserBase.metadata.create_all(bind=engine)
+
+
 def test_db_connection():
+    """Test database connection."""
     try:
         with engine.connect() as connection:
             result = connection.execute(text("SELECT 1"))
             return result.fetchone()[0] == 1
-    except Exception:
-        return False
+    except Exception as e:
+        return f"connection failed: {str(e)}"

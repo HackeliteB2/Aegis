@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import AdminHeader from '../../../components/AdminHeader';
 import MatrixBackground from '../../../components/MatrixBackground';
+import ProtectedRoute from '../../../components/ProtectedRoute';
 
 type Role = 'admin' | 'user';
 
@@ -137,9 +138,10 @@ export default function ManageUsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      <MatrixBackground />
-      <AdminHeader />
+    <ProtectedRoute requireAdmin={true}>
+      <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        <MatrixBackground />
+        <AdminHeader />
 
       <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
@@ -326,6 +328,7 @@ export default function ManageUsersPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

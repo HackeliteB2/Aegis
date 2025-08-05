@@ -1,12 +1,28 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
 interface AdminHeaderProps {
   userName?: string;
   role?: string;
   initial?: string;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ userName = 'Admin User', role = 'Administrator', initial = 'A' }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ userName, role, initial }) => {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/Auth');
+  };
+
+  // Use auth context data if props are not provided
+  const displayName = userName || user?.name || 'Admin User';
+  const displayRole = role || user?.role || 'Administrator';
+  const displayInitial = initial || displayName.charAt(0).toUpperCase();
+
   return (
     <div className="relative z-40 border-b border-green-500/30 bg-gray-900/50 backdrop-blur-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -21,11 +37,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ userName = 'Admin User', role
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">{initial}</span>
+                <span className="text-white text-sm font-semibold">{displayInitial}</span>
               </div>
               <div className="hidden sm:block">
-                <div className="text-white text-sm font-medium">{userName}</div>
-                <div className="text-gray-400 text-xs">{role}</div>
+                <div className="text-white text-sm font-medium">{displayName}</div>
+                <div className="text-gray-400 text-xs">{displayRole.toUpperCase()}</div>
               </div>
             </div>
 
@@ -54,7 +70,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ userName = 'Admin User', role
                     Account Settings
                   </button>
                   <hr className="border-gray-700 my-1" />
-                  <button className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
+                  >
                     <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
