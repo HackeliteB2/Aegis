@@ -77,3 +77,75 @@ async def get_users(
 ):
     """Get all users (admin only)."""
     return get_all_users(db, skip=skip, limit=limit)
+
+@router.put("/users/profile", response_model=User)
+async def update_user_profile(
+    profile_data: dict,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """Update current user's profile."""
+    from app.services.user_service import update_user
+    from app.schemas.user import UserUpdate
+    
+    # Convert dict to UserUpdate schema
+    user_update = UserUpdate(**profile_data)
+    updated_user = update_user(db, current_user.id, user_update)
+    
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return updated_user
+
+@router.get("/users/{user_id}", response_model=User)
+async def get_user_by_id(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """Get user by ID."""
+    from app.services.user_service import get_user_by_id
+    from uuid import UUID
+    
+    try:
+        user_uuid = UUID(user_id)
+        user = get_user_by_id(db, user_uuid)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        return user
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user ID format"
+        )
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_admin: UserModel = Depends(get_current_admin_user)
+):
+    """Delete user by ID (admin only)."""
+    from app.services.user_service import delete_user
+    from uuid import UUID
+    
+    try:
+        user_uuid = UUID(user_id)
+        success = delete_user(db, user_uuid)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        return {"message": "User deleted successfully"}
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user ID format"
+        )
