@@ -9,6 +9,9 @@ from typing import Optional, List, Callable
 
 security = HTTPBearer()
 
+# Optional security for WebSocket connections
+optional_security = HTTPBearer(auto_error=False)
+
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -98,10 +101,6 @@ def get_current_organizer_or_admin(current_user: User = Depends(get_current_user
             detail="Organizer or Admin access required"
         )
     return current_user
-
-
-# Optional security for WebSocket connections
-optional_security = HTTPBearer(auto_error=False)
 
 
 def get_websocket_user(
