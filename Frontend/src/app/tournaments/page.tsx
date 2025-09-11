@@ -17,6 +17,16 @@ import {
 import { format } from 'date-fns';
 
 const TournamentCard: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const formatSafeDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'TBD';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'TBD';
+      return format(date, 'MMM dd, yyyy');
+    } catch (error) {
+      return 'TBD';
+    }
+  };
   const getStatusColor = (status: Tournament['status']) => {
     switch (status) {
       case 'registration_open':
@@ -75,12 +85,12 @@ const TournamentCard: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
 
         <div className="flex items-center text-gray-300 text-sm">
           <CalendarDaysIcon className="w-4 h-4 mr-2" />
-          <span>Starts {format(new Date(tournament.start_date), 'MMM dd, yyyy')}</span>
+          <span>Starts {formatSafeDate(tournament.start_date)}</span>
         </div>
 
         <div className="flex items-center text-gray-300 text-sm">
           <ClockIcon className="w-4 h-4 mr-2" />
-          <span>Registration until {format(new Date(tournament.registration_deadline), 'MMM dd, yyyy')}</span>
+          <span>Registration until {formatSafeDate(tournament.registration_deadline)}</span>
         </div>
 
         {tournament.prize_pool && (
@@ -131,7 +141,7 @@ export default function TournamentsPage() {
   const filteredTournaments = tournaments.filter(tournament => {
     const matchesSearch = tournament.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          tournament.game.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         tournament.organizer.name.toLowerCase().includes(searchQuery.toLowerCase());
+                         (tournament.organizer?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || tournament.status === filterStatus;
     const matchesGame = filterGame === 'all' || tournament.game.toLowerCase() === filterGame.toLowerCase();
@@ -139,7 +149,7 @@ export default function TournamentsPage() {
     return matchesSearch && matchesStatus && matchesGame;
   });
 
-  const games = Array.from(new Set(tournaments.map(t => t.game)));
+  const games = Array.from(new Set(tournaments.map(t => t.game).filter(game => game && game.trim() !== '')));
 
   if (isLoading) {
     return (
@@ -191,11 +201,11 @@ export default function TournamentsPage() {
                 onChange={(e) => setFilterStatus(e.target.value as Tournament['status'] | 'all')}
                 className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-green-400 transition-colors appearance-none"
               >
-                <option value="all">All Statuses</option>
-                <option value="registration_open">Registration Open</option>
-                <option value="registration_closed">Registration Closed</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
+                <option key="all" value="all">All Statuses</option>
+                <option key="registration_open" value="registration_open">Registration Open</option>
+                <option key="registration_closed" value="registration_closed">Registration Closed</option>
+                <option key="in_progress" value="in_progress">In Progress</option>
+                <option key="completed" value="completed">Completed</option>
               </select>
             </div>
 
@@ -206,9 +216,9 @@ export default function TournamentsPage() {
                 onChange={(e) => setFilterGame(e.target.value)}
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-green-400 transition-colors appearance-none"
               >
-                <option value="all">All Games</option>
-                {games.map(game => (
-                  <option key={game} value={game}>{game}</option>
+                <option key="all" value="all">All Games</option>
+                {games.map((game, index) => (
+                  <option key={`game-${game}-${index}`} value={game}>{game}</option>
                 ))}
               </select>
             </div>

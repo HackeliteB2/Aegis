@@ -296,6 +296,36 @@ class WebSocketHandler:
                     "data": stats
                 })
             
+            elif message_type == "authenticate":
+                token = message.get("token")
+                if token:
+                    try:
+                        from app.core.auth import decode_token
+                        payload = decode_token(token)
+                        user_data = {
+                            "user_id": payload.get("sub"),
+                            "username": payload.get("username"),
+                            "role": payload.get("role")
+                        }
+                        # Update connection with user data
+                        self.manager.connection_users[connection_id] = user_data
+                        await self.manager.send_personal_message(connection_id, {
+                            "type": "authentication_success",
+                            "user": user_data
+                        })
+                        logger.info(f"Connection {connection_id} authenticated as {user_data.get('username')}")
+                    except Exception as e:
+                        await self.manager.send_personal_message(connection_id, {
+                            "type": "authentication_failed",
+                            "message": "Invalid token"
+                        })
+                        logger.warning(f"Authentication failed for connection {connection_id}: {e}")
+                else:
+                    await self.manager.send_personal_message(connection_id, {
+                        "type": "authentication_failed",
+                        "message": "No token provided"
+                    })
+            
             else:
                 await self.manager.send_personal_message(connection_id, {
                     "type": "error",

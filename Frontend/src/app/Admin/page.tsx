@@ -19,6 +19,17 @@ import {
 import Link from 'next/link';
 import { format } from 'date-fns';
 
+const formatSafeDate = (dateString: string | null | undefined, formatStr: string = 'MMM dd, yyyy') => {
+  if (!dateString) return 'TBD';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'TBD';
+    return format(date, formatStr);
+  } catch (error) {
+    return 'TBD';
+  }
+};
+
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tournaments' | 'system'>('overview');
@@ -268,7 +279,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="text-right">
                           <p className="text-gray-400 text-sm">
-                            {format(activity.timestamp, 'HH:mm:ss')}
+                            {formatSafeDate(activity.timestamp.toISOString(), 'HH:mm:ss')}
                           </p>
                         </div>
                       </div>
@@ -374,7 +385,7 @@ export default function AdminDashboard() {
                           Organizer: {tournament.organizer?.name || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          Start: {format(new Date(tournament.start_date), 'MMM dd, yyyy')}
+                          Start: {formatSafeDate(tournament.start_date)}
                         </p>
                       </div>
                     </div>

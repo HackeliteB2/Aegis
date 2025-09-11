@@ -41,17 +41,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (storedToken && storedUser) {
       try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        
-        // Verify token is still valid
-        verifyToken(storedToken).catch(() => {
-          // Token is invalid, clear storage
+        // Check if token is expired before setting it
+        if (isTokenExpired(storedToken)) {
+          console.log('Stored token is expired, clearing storage');
           localStorage.removeItem('aegis_token');
           localStorage.removeItem('aegis_user');
-          setToken(null);
-          setUser(null);
-        });
+        } else {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          
+          // Verify token is still valid with server
+          verifyToken(storedToken).catch(() => {
+            // Token is invalid, clear storage
+            localStorage.removeItem('aegis_token');
+            localStorage.removeItem('aegis_user');
+            setToken(null);
+            setUser(null);
+          });
+        }
       } catch (error) {
         // Invalid stored data, clear it
         localStorage.removeItem('aegis_token');
@@ -62,8 +69,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      return payload.exp < currentTime;
+    } catch (error) {
+      return true; // If we can't parse it, consider it expired
+    }
+  };
+
   const verifyToken = async (authToken: string): Promise<boolean> => {
     try {
+      // First check if token is expired
+      if (isTokenExpired(authToken)) {
+        console.log('Token is expired, clearing storage');
+        throw new Error('Token is expired');
+      }
+
       // Set token temporarily for the API call
       localStorage.setItem('aegis_token', authToken);
       

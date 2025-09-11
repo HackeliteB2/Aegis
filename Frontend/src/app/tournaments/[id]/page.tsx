@@ -22,6 +22,17 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const formatSafeDate = (dateString: string | null | undefined, formatStr: string = 'MMM dd, yyyy') => {
+  if (!dateString) return 'TBD';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'TBD';
+    return format(date, formatStr);
+  } catch (error) {
+    return 'TBD';
+  }
+};
+
 const TournamentBracket: React.FC<{ matches: Match[] }> = ({ matches }) => {
   // Group matches by round
   const matchesByRound = matches.reduce((acc, match) => {
@@ -64,7 +75,7 @@ const TournamentBracket: React.FC<{ matches: Match[] }> = ({ matches }) => {
                     <span className="text-gray-400 text-sm">Match {match.match_number}</span>
                     {match.scheduled_time && (
                       <div className="text-xs text-gray-500">
-                        {format(new Date(match.scheduled_time), 'MMM dd, HH:mm')}
+                        {formatSafeDate(match.scheduled_time, 'MMM dd, HH:mm')}
                       </div>
                     )}
                   </div>
@@ -227,7 +238,7 @@ export default function TournamentDetailsPage() {
                 </div>
                 <div className="flex items-center">
                   <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                  <span>Starts {format(new Date(tournament.start_date), 'MMM dd, yyyy')}</span>
+                  <span>Starts {formatSafeDate(tournament.start_date)}</span>
                 </div>
               </div>
             </div>
@@ -318,16 +329,16 @@ export default function TournamentDetailsPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Registration Deadline:</span>
-                        <span>{format(new Date(tournament.registration_deadline), 'MMM dd, yyyy')}</span>
+                        <span>{formatSafeDate(tournament.registration_deadline)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Start Date:</span>
-                        <span>{format(new Date(tournament.start_date), 'MMM dd, yyyy')}</span>
+                        <span>{formatSafeDate(tournament.start_date)}</span>
                       </div>
                       {tournament.end_date && (
                         <div className="flex justify-between">
                           <span className="text-gray-400">End Date:</span>
-                          <span>{format(new Date(tournament.end_date), 'MMM dd, yyyy')}</span>
+                          <span>{formatSafeDate(tournament.end_date)}</span>
                         </div>
                       )}
                     </div>
@@ -338,11 +349,11 @@ export default function TournamentDetailsPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Name:</span>
-                        <span>{tournament.organizer.name}</span>
+                        <span>{tournament.organizer?.name || 'Unknown'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Username:</span>
-                        <span>@{tournament.organizer.username}</span>
+                        <span>@{tournament.organizer?.username || 'unknown'}</span>
                       </div>
                     </div>
                   </div>
@@ -383,15 +394,15 @@ export default function TournamentDetailsPage() {
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-400">Captain:</span>
-                            <span>{team.captain.name}</span>
+                            <span>{team.captain?.name || 'Unknown'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">Members:</span>
-                            <span>{team.members.length}</span>
+                            <span>{team.members?.length || 0}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">Record:</span>
-                            <span>{team.wins}-{team.losses}-{team.draws}</span>
+                            <span>{team.wins || 0}-{team.losses || 0}-{team.draws || 0}</span>
                           </div>
                         </div>
                       </div>
@@ -447,7 +458,7 @@ export default function TournamentDetailsPage() {
 
                         {match.scheduled_time && (
                           <div className="text-sm text-gray-400 text-center mb-2">
-                            Scheduled: {format(new Date(match.scheduled_time), 'MMM dd, yyyy HH:mm')}
+                            Scheduled: {formatSafeDate(match.scheduled_time, 'MMM dd, yyyy HH:mm')}
                           </div>
                         )}
 
