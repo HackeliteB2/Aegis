@@ -12,6 +12,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isOrganizer: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const result = await authApi.login({ username, password });
+      const result = await authApi.login({ email: username, password });
       
       if (result.success && result.data) {
         const { user: userData, token: tokenData } = result.data;
@@ -124,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!(user && token);
   const isAdmin = user?.role === 'admin';
+  const isOrganizer = user?.role === 'organizer';
 
   const value: AuthContextType = {
     user,
@@ -133,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     isAuthenticated,
     isAdmin,
+    isOrganizer,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
