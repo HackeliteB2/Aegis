@@ -12,6 +12,7 @@ from .tournament_routes import router as tournament_router
 from .team_routes import router as team_router
 from .match_routes import router as match_router
 from .websocket_routes import router as websocket_router
+from .chatbot_routes import router as chatbot_router
 
 router = APIRouter()
 
@@ -21,6 +22,7 @@ router.include_router(tournament_router, prefix="/tournaments", tags=["tournamen
 router.include_router(team_router, prefix="/teams", tags=["teams"])
 router.include_router(match_router, prefix="/matches", tags=["matches"])
 router.include_router(websocket_router, tags=["websockets"])
+router.include_router(chatbot_router, prefix="/chatbot", tags=["chatbot"])
 
 
 @router.get("/health")

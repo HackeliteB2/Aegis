@@ -69,7 +69,7 @@ def require_role(allowed_roles: List[UserRole]) -> Callable:
 
 
 def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user if authenticated, otherwise None."""
