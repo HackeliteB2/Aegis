@@ -19,6 +19,28 @@ import {
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
+const formatSafeDate = (dateString: string | null | undefined) => {
+  if (!dateString) return 'TBD';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'TBD';
+    return format(date, 'MMM dd, yyyy');
+  } catch (error) {
+    return 'TBD';
+  }
+};
+
+const formatSafeDateTime = (dateString: string | null | undefined) => {
+  if (!dateString) return 'TBD';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'TBD';
+    return format(date, 'MMM dd, HH:mm');
+  } catch (error) {
+    return 'TBD';
+  }
+};
+
 export default function DashboardPage() {
   const { user, isAuthenticated, isAdmin, isOrganizer } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches'>('overview');
@@ -61,19 +83,25 @@ export default function DashboardPage() {
   }
 
   const userTournaments = tournaments.filter(t => 
-    t.organizer_id === user?.id || isAdmin
+    t && (t.organizer_id === user?.id || isAdmin)
   );
 
   const activeTournaments = tournaments.filter(t => 
-    ['registration_open', 'registration_closed', 'in_progress'].includes(t.status)
+    t && t.status && ['registration_open', 'registration_closed', 'in_progress'].includes(t.status)
   );
 
-  const upcomingMatches = matches.filter(m => 
-    m.status === 'pending' && m.scheduled_time && new Date(m.scheduled_time) > new Date()
-  ).slice(0, 5);
+  const upcomingMatches = matches.filter(m => {
+    try {
+      return m && m.status === 'pending' && m.scheduled_time && 
+             !isNaN(new Date(m.scheduled_time).getTime()) &&
+             new Date(m.scheduled_time) > new Date();
+    } catch (error) {
+      return false;
+    }
+  }).slice(0, 5);
 
   const recentMatches = matches.filter(m => 
-    m.status === 'completed'
+    m && m.status === 'completed'
   ).slice(0, 5);
 
   const stats = {
@@ -216,13 +244,13 @@ export default function DashboardPage() {
                                 {match.team1?.name || 'TBD'} vs {match.team2?.name || 'TBD'}
                               </p>
                               <p className="text-sm text-gray-400">
-                                {match.tournament.name} - Round {match.round}
+                                {match.tournament?.name || 'Tournament'} - Round {match.round}
                               </p>
                             </div>
                             <div className="text-right">
                               {match.scheduled_time && (
                                 <p className="text-sm text-green-400">
-                                  {format(new Date(match.scheduled_time), 'MMM dd, HH:mm')}
+                                  {formatSafeDateTime(match.scheduled_time)}
                                 </p>
                               )}
                               <Link
@@ -254,7 +282,7 @@ export default function DashboardPage() {
                                 {match.team1?.name} {match.team1_score} - {match.team2_score} {match.team2?.name}
                               </p>
                               <p className="text-sm text-gray-400">
-                                {match.tournament.name} - Round {match.round}
+                                {match.tournament?.name || 'Tournament'} - Round {match.round}
                               </p>
                               {match.summary && (
                                 <p className="text-xs text-gray-500 mt-1 line-clamp-1">
@@ -264,7 +292,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right">
                               <span className="text-green-400 font-medium">
-                                Winner: {match.winner?.name}
+                                Winner: {match.winner?.name || 'TBD'}
                               </span>
                               <Link
                                 href={`/tournaments/${match.tournament_id}`}
@@ -313,10 +341,10 @@ export default function DashboardPage() {
                         
                         <div className="space-y-1 text-sm mb-3">
                           <p className="text-gray-400">
-                            {tournament.game} • {tournament.teams_count}/{tournament.max_teams} teams
+                            {tournament.game || 'Game'} • {tournament.teams_count || 0}/{tournament.max_teams || 0} teams
                           </p>
                           <p className="text-gray-400">
-                            Starts {format(new Date(tournament.start_date), 'MMM dd, yyyy')}
+                            Starts {formatSafeDate(tournament.start_date)}
                           </p>
                         </div>
 
@@ -359,9 +387,9 @@ export default function DashboardPage() {
                         </div>
                         
                         <div className="space-y-1 text-sm mb-3">
-                          <p className="text-gray-400">Captain: {team.captain.name}</p>
-                          <p className="text-gray-400">Members: {team.members.length}</p>
-                          <p className="text-gray-400">Record: {team.wins}-{team.losses}-{team.draws}</p>
+                          <p className="text-gray-400">Captain: {team.captain?.name || 'TBD'}</p>
+                          <p className="text-gray-400">Members: {team.members?.length || 0}</p>
+                          <p className="text-gray-400">Record: {team.wins || 0}-{team.losses || 0}-{team.draws || 0}</p>
                         </div>
 
                         <Link

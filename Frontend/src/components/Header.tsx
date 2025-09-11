@@ -10,14 +10,13 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    router.push('/Auth');
   };
 
   const handleDashboard = () => {
     if (isAdmin) {
-      router.push('/Admin');
+      router.push('/admin');
     } else {
-      router.push('/Dashboard');
+      router.push('/dashboard');
     }
   };
 
