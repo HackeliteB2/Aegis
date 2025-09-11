@@ -16,7 +16,8 @@ class GeminiService:
         if self.enabled:
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
+                # Use the latest Gemini 2.0 Flash model
+                self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
                 print("Gemini AI service initialized successfully")
             except Exception as e:
                 print(f"Failed to initialize Gemini service: {e}")
@@ -44,6 +45,34 @@ class GeminiService:
         except Exception as e:
             print(f"Gemini API error: {e}")
             return self._generate_fallback_summary(match_data)
+
+    def generate_simple_match_summary(self, team1: str, team2: str, score1: int, score2: int, duration_minutes: int = 30) -> str:
+        """
+        Convenience method for generating match summary with simple parameters.
+        """
+        match_data = {
+            'team1_name': team1,
+            'team2_name': team2,
+            'team1_score': score1,
+            'team2_score': score2,
+            'duration_minutes': duration_minutes,
+            'game_type': 'Tournament Match'
+        }
+        return self.generate_match_summary(match_data)
+
+    def generate_simple_tournament_recap(self, tournament_name: str, winner_team: str, total_matches: int, duration_days: int, highlights: list = None) -> str:
+        """
+        Convenience method for generating tournament recap with simple parameters.
+        """
+        tournament_data = {
+            'tournament_name': tournament_name,
+            'winner_team': winner_team,
+            'total_matches': total_matches,
+            'duration_days': duration_days,
+            'highlights': highlights or [],
+            'participant_count': total_matches + 1  # Estimate based on matches
+        }
+        return self.generate_tournament_recap(tournament_data)
 
     def _create_match_summary_prompt(self, match_data: Dict[str, Any]) -> str:
         """Create a detailed prompt for match summary generation."""
