@@ -723,7 +723,7 @@ export const websocketApi = {
     }, true),
 };
 
-export default {
+const api = {
   auth: authApi,
   tournaments: tournamentApi,
   teams: teamApi,
@@ -733,3 +733,5 @@ export default {
   websocket: websocketApi,
   general: generalApi,
 };
+
+export default api;
