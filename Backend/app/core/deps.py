@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.auth import verify_token
-from app.services.user_service import get_user_by_username
+from app.services.user_service import get_user_by_username, get_user_by_email
 from app.models.user import User, UserRole
 from typing import Optional, List, Callable
 
@@ -21,11 +21,11 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    username = verify_token(credentials.credentials)
-    if username is None:
+    email = verify_token(credentials.credentials)
+    if email is None:
         raise credentials_exception
     
-    user = get_user_by_username(db, username)
+    user = get_user_by_email(db, email)
     if user is None:
         raise credentials_exception
     
@@ -77,11 +77,11 @@ def get_optional_current_user(
         return None
     
     try:
-        username = verify_token(credentials.credentials)
-        if username is None:
+        email = verify_token(credentials.credentials)
+        if email is None:
             return None
         
-        user = get_user_by_username(db, username)
+        user = get_user_by_email(db, email)
         if user is None or not user.is_active:
             return None
         
@@ -113,11 +113,11 @@ def get_websocket_user(
         return None
     
     try:
-        username = verify_token(credentials.credentials)
-        if username is None:
+        email = verify_token(credentials.credentials)
+        if email is None:
             return None
         
-        user = get_user_by_username(db, username)
+        user = get_user_by_email(db, email)
         if user is None or not user.is_active:
             return None
         

@@ -17,7 +17,7 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """Authenticate user and return access token."""
-    user = authenticate_user(db, user_credentials.username, user_credentials.password)
+    user = authenticate_user(db, user_credentials.email, user_credentials.password)
     
     if not user:
         raise HTTPException(
@@ -26,7 +26,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    token_data = create_token_response(user.username)
+    token_data = create_token_response(user.email)
     
     return {
         "user": user,
@@ -49,16 +49,15 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    return create_token_response(user.username)
+    return create_token_response(user.email)
 
 
 @router.post("/register", response_model=User)
 async def register(
     user_data: UserCreate,
-    db: Session = Depends(get_db),
-    current_admin: UserModel = Depends(get_current_admin_user)
+    db: Session = Depends(get_db)
 ):
-    """Register a new user (admin only)."""
+    """Register a new user (public registration)."""
     return create_user(db, user_data)
 
 

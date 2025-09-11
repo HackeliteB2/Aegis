@@ -22,9 +22,9 @@ def get_user_by_id(db: Session, user_id: UUID) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
-    """Authenticate a user with username and password."""
-    user = get_user_by_username(db, username)
+def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+    """Authenticate a user with email and password."""
+    user = get_user_by_email(db, email)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):

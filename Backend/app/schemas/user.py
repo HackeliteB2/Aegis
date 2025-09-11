@@ -132,7 +132,7 @@ class UserListResponse(BaseModel):
 
 
 class UserLogin(BaseModel):
-    username: str
+    email: str  # Changed from username to email for better UX
     password: str
 
 
