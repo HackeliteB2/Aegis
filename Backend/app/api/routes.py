@@ -5,12 +5,22 @@ from app.core.database import get_db, test_db_connection
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.services.user_service import create_default_admin
+
+# Import all route modules
 from .auth_routes import router as auth_router
+from .tournament_routes import router as tournament_router
+from .team_routes import router as team_router
+from .match_routes import router as match_router
+from .websocket_routes import router as websocket_router
 
 router = APIRouter()
 
-# Include authentication routes
-router.include_router(auth_router)
+# Include all API routes with prefixes
+router.include_router(auth_router, prefix="/auth", tags=["authentication"])
+router.include_router(tournament_router, prefix="/tournaments", tags=["tournaments"])
+router.include_router(team_router, prefix="/teams", tags=["teams"])
+router.include_router(match_router, prefix="/matches", tags=["matches"])
+router.include_router(websocket_router, tags=["websockets"])
 
 
 @router.get("/health")

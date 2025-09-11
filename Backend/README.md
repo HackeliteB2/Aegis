@@ -1,15 +1,45 @@
-# Aegis Backend
+# 🏆 Aegis Tournament Management System - Backend
 
-A FastAPI backend application with PostgreSQL database integration.
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://postgresql.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Features
+> A comprehensive, scalable backend API for esports tournament management with blockchain integration, AI-powered summaries, and real-time updates.
 
-- FastAPI web framework with automatic API documentation
-- PostgreSQL database connection using psycopg driver
-- Health check endpoint with database status monitoring
-- CORS middleware enabled for any frontend URL
-- Environment-based configuration with .env support
-- Production-ready with uvicorn ASGI server
+## 🚀 Features
+
+### 🎯 Core Functionality
+- **Tournament Management**: Complete tournament lifecycle from creation to completion
+- **Team Management**: Team creation, member management, and statistics
+- **Match Management**: Match scheduling, result reporting, and verification
+- **User Management**: Multi-role authentication (Admin, Organizer, Player, Spectator)
+
+### 🔐 Security & Authentication
+- **JWT-based Authentication**: Secure token-based authentication system
+- **Role-based Access Control**: Granular permissions for different user types
+- **Password Security**: BCrypt hashing with secure password policies
+
+### ⛓️ Blockchain Integration
+- **Provably Fair Draws**: Tournament draws generated on Polygon blockchain
+- **Transparent Results**: Immutable tournament results and statistics
+- **Smart Contract Integration**: Web3 integration for tournament verification
+
+### 🤖 AI-Powered Features
+- **Match Summaries**: Automated match summaries using Google Gemini AI
+- **Tournament Recaps**: AI-generated tournament highlights and analysis
+- **Player Profiles**: Dynamic player description generation
+
+### ⚡ Real-time Features
+- **WebSocket Support**: Live tournament updates and match scores
+- **Real-time Notifications**: Instant alerts for match updates and tournament events
+- **Live Bracket Updates**: Dynamic tournament bracket visualization
+
+### 📧 Communication
+- **Email Notifications**: SendGrid integration for automated emails
+- **In-app Notifications**: Comprehensive notification system
+- **Multi-channel Alerts**: Email, WebSocket, and in-app notifications
 
 ## Project Structure
 

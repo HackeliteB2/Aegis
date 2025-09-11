@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from .config import settings
 from typing import Generator
+
+Base = declarative_base()
 
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -18,8 +20,9 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables():
     """Create all tables in the database."""
-    from app.models.user import Base as UserBase
-    UserBase.metadata.create_all(bind=engine)
+    # Import all models to ensure they're registered with Base
+    from app.models import user, tournament, team, match
+    Base.metadata.create_all(bind=engine)
 
 
 def test_db_connection():

@@ -8,7 +8,7 @@ from app.schemas.user import UserLogin, UserCreate, User, AuthResponse, Token
 from app.services.user_service import authenticate_user, create_user, get_all_users
 from app.models.user import User as UserModel
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(tags=["authentication"])
 
 
 @router.post("/login", response_model=AuthResponse)

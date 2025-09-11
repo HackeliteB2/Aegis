@@ -4,6 +4,7 @@ from app.models.user import User, UserRole, UserStatus
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.auth import get_password_hash, verify_password
 from typing import Optional
+from uuid import UUID
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
@@ -16,7 +17,7 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+def get_user_by_id(db: Session, user_id: UUID) -> Optional[User]:
     """Get user by ID."""
     return db.query(User).filter(User.id == user_id).first()
 
@@ -33,7 +34,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
     return user
 
 
-def create_user(db: Session, user: UserCreate) -> User:
+def create_user(db: Session, user: UserCreate, override_role: UserRole = None) -> User:
     """Create a new user."""
     # Check if username already exists
     if get_user_by_username(db, user.username):
@@ -52,14 +53,23 @@ def create_user(db: Session, user: UserCreate) -> User:
     # Hash the password
     hashed_password = get_password_hash(user.password)
     
+    # Determine role - use override if provided, otherwise default to PLAYER
+    user_role = override_role if override_role else UserRole.PLAYER
+    
     # Create user object
     db_user = User(
         username=user.username,
         email=user.email,
         name=user.name,
         hashed_password=hashed_password,
-        role=user.role,
-        status=user.status
+        role=user_role,
+        status=UserStatus.ACTIVE,
+        bio=user.bio,
+        discord_username=user.discord_username,
+        steam_profile=user.steam_profile,
+        preferred_games=user.preferred_games,
+        skill_level=user.skill_level,
+        timezone=user.timezone
     )
     
     db.add(db_user)
@@ -69,7 +79,7 @@ def create_user(db: Session, user: UserCreate) -> User:
     return db_user
 
 
-def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
+def update_user(db: Session, user_id: UUID, user_update: UserUpdate) -> Optional[User]:
     """Update user information."""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -111,7 +121,7 @@ def get_all_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(User).offset(skip).limit(limit).all()
 
 
-def delete_user(db: Session, user_id: int) -> bool:
+def delete_user(db: Session, user_id: UUID) -> bool:
     """Delete a user."""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -138,4 +148,4 @@ def create_default_admin(db: Session) -> User:
         status=UserStatus.ACTIVE
     )
     
-    return create_user(db, default_admin)
+    return create_user(db, default_admin, UserRole.ADMIN)
