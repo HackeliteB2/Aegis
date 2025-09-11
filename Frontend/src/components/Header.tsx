@@ -52,7 +52,7 @@ export default function Header() {
                 Login
               </Link>
               <Link
-                href="/Auth/register" // Assuming a registration page exists
+                href="/auth/register"
                 className="px-4 py-2 border border-green-500 rounded-md text-green-400 hover:bg-green-500 hover:text-black transition-all"
               >
                 Register
