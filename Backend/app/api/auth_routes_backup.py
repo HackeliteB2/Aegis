@@ -8,16 +8,8 @@ from app.schemas.user import UserLogin, UserCreate, User, AuthResponse, Token
 from app.services.user_service import authenticate_user, create_user, get_all_users
 from app.models.user import User as UserModel
 
-# Create a fresh router with no dependencies
-router = APIRouter()
+router = APIRouter(tags=["authentication"])
 
-@router.post("/register", response_model=User)
-async def register(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    """Register a new user (public registration)."""
-    return create_user(db, user_data)
 
 @router.post("/login", response_model=AuthResponse)
 async def login(
@@ -30,7 +22,7 @@ async def login(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -40,6 +32,7 @@ async def login(
         "user": user,
         "token": token_data
     }
+
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
@@ -58,15 +51,27 @@ async def login_for_access_token(
     
     return create_token_response(user.email)
 
+
+@router.post("/register", response_model=User)
+async def register(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
+):
+    """Register a new user (public registration)."""
+    return create_user(db, user_data)
+
+
 @router.get("/me", response_model=User)
 async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     """Get current user information."""
     return current_user
 
+
 @router.post("/logout")
 async def logout(current_user: UserModel = Depends(get_current_user)):
     """Logout user (invalidate token on client side)."""
     return {"message": "Successfully logged out"}
+
 
 @router.get("/users", response_model=list[User])
 async def get_users(

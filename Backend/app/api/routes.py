@@ -35,6 +35,11 @@ async def root():
     return {"message": "Aegis Backend API is running"}
 
 
+@router.post("/test-register")
+async def test_register():
+    """Test public registration endpoint."""
+    return {"message": "Test registration endpoint works", "status": "public"}
+
 @router.get("/protected")
 async def protected_route(current_user: User = Depends(get_current_user)):
     """Example protected route."""

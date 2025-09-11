@@ -81,36 +81,36 @@ class EndpointTester:
         
         # Register admin
         admin_data = {
+            "username": "admin",
             "email": "admin@aegis.com",
             "password": "AdminPass123!",
-            "name": "System Admin",
-            "role": "ADMIN"
+            "name": "System Admin"
         }
         admin_response = self.test_endpoint("POST", "/auth/register", admin_data, description="Register admin")
         
         # Register organizer
         organizer_data = {
+            "username": "organizer",
             "email": "organizer@aegis.com",
             "password": "OrganizerPass123!",
-            "name": "Tournament Organizer",
-            "role": "ORGANIZER"
+            "name": "Tournament Organizer"
         }
         organizer_response = self.test_endpoint("POST", "/auth/register", organizer_data, description="Register organizer")
         
         # Register players
         player1_data = {
+            "username": "player1",
             "email": "player1@aegis.com",
             "password": "PlayerPass123!",
-            "name": "Player One",
-            "role": "PLAYER"
+            "name": "Player One"
         }
         player1_response = self.test_endpoint("POST", "/auth/register", player1_data, description="Register player1")
         
         player2_data = {
+            "username": "player2",
             "email": "player2@aegis.com",
             "password": "PlayerPass123!",
-            "name": "Player Two",
-            "role": "PLAYER"
+            "name": "Player Two"
         }
         player2_response = self.test_endpoint("POST", "/auth/register", player2_data, description="Register player2")
 
@@ -121,7 +121,7 @@ class EndpointTester:
         }, description="Admin login")
         
         if admin_login:
-            self.tokens["admin"] = admin_login.get("access_token")
+            self.tokens["admin"] = admin_login.get("token", {}).get("access_token")
             self.test_data["admin_id"] = admin_login.get("user", {}).get("id")
 
         organizer_login = self.test_endpoint("POST", "/auth/login", {
@@ -130,7 +130,7 @@ class EndpointTester:
         }, description="Organizer login")
         
         if organizer_login:
-            self.tokens["organizer"] = organizer_login.get("access_token")
+            self.tokens["organizer"] = organizer_login.get("token", {}).get("access_token")
             self.test_data["organizer_id"] = organizer_login.get("user", {}).get("id")
 
         player1_login = self.test_endpoint("POST", "/auth/login", {
@@ -139,7 +139,7 @@ class EndpointTester:
         }, description="Player1 login")
         
         if player1_login:
-            self.tokens["player1"] = player1_login.get("access_token")
+            self.tokens["player1"] = player1_login.get("token", {}).get("access_token")
             self.test_data["player1_id"] = player1_login.get("user", {}).get("id")
 
         player2_login = self.test_endpoint("POST", "/auth/login", {
@@ -148,7 +148,7 @@ class EndpointTester:
         }, description="Player2 login")
         
         if player2_login:
-            self.tokens["player2"] = player2_login.get("access_token")
+            self.tokens["player2"] = player2_login.get("token", {}).get("access_token")
             self.test_data["player2_id"] = player2_login.get("user", {}).get("id")
 
         # 3. User Management Tests
