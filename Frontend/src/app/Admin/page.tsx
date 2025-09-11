@@ -53,6 +53,20 @@ export default function AdminDashboard() {
     enabled: isAdmin,
   });
 
+  const { data: servicesResponse } = useQuery({
+    queryKey: ['admin-services'],
+    queryFn: () => generalApi.getServicesStatus(),
+    enabled: isAdmin,
+    refetchInterval: 30000,
+  });
+
+  const { data: blockchainResponse } = useQuery({
+    queryKey: ['admin-blockchain'],
+    queryFn: () => generalApi.getBlockchainStatus(),
+    enabled: isAdmin,
+    refetchInterval: 30000,
+  });
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
@@ -69,6 +83,8 @@ export default function AdminDashboard() {
   const tournaments = tournamentsResponse?.data || [];
   const teams = teamsResponse?.data || [];
   const matches = matchesResponse?.data || [];
+  const services = servicesResponse?.data;
+  const blockchain = blockchainResponse?.data;
 
   const stats = {
     totalUsers: users.length,
@@ -375,11 +391,15 @@ export default function AdminDashboard() {
                     <div className="bg-gray-800/50 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-300">API Status</span>
-                        <span className="text-green-400">OPERATIONAL</span>
+                        <span className={systemHealth ? "text-green-400" : "text-red-400"}>
+                          {systemHealth ? "OPERATIONAL" : "ERROR"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-300">Database</span>
-                        <span className="text-green-400">CONNECTED</span>
+                        <span className={services?.database?.connected ? "text-green-400" : "text-red-400"}>
+                          {services?.database?.connected ? "CONNECTED" : "DISCONNECTED"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-300">WebSocket</span>
@@ -387,22 +407,33 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-300">Blockchain</span>
-                        <span className="text-green-400">SYNCED</span>
+                        <span className={blockchain?.connected ? "text-green-400" : "text-yellow-400"}>
+                          {blockchain?.connected ? 
+                            `CONNECTED (${blockchain.network || `Chain ${blockchain.chain_id}`})` : 
+                            blockchain?.enabled ? "DISCONNECTED" : "DISABLED"
+                          }
+                        </span>
                       </div>
                     </div>
 
                     <div className="bg-gray-800/50 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-300">AI Services</span>
-                        <span className="text-green-400">ONLINE</span>
+                        <span className={services?.ai?.enabled ? "text-green-400" : "text-red-400"}>
+                          {services?.ai?.enabled ? `ONLINE (${services.ai.provider})` : "OFFLINE"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-300">Email Service</span>
-                        <span className="text-green-400">READY</span>
+                        <span className={services?.email?.enabled ? "text-green-400" : "text-red-400"}>
+                          {services?.email?.enabled ? `READY (${services.email.provider})` : "DISABLED"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-300">Chatbot</span>
-                        <span className="text-green-400">ACTIVE</span>
+                        <span className="text-gray-300">Blockchain</span>
+                        <span className={services?.blockchain?.enabled ? "text-green-400" : "text-yellow-400"}>
+                          {services?.blockchain?.enabled ? services.blockchain.status.toUpperCase() : "DISABLED"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-300">Security</span>
