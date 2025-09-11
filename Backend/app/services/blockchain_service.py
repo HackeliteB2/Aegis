@@ -6,15 +6,16 @@ import random
 from web3 import Web3
 import os
 from datetime import datetime
+from app.core.config import settings
 
 
 class BlockchainService:
     """Service for blockchain interactions to ensure fair tournament draws."""
     
     def __init__(self):
-        self.web3_provider = os.getenv("POLYGON_RPC_URL", "https://polygon-rpc.com/")
-        self.contract_address = os.getenv("TOURNAMENT_CONTRACT_ADDRESS")
-        self.private_key = os.getenv("BLOCKCHAIN_PRIVATE_KEY")
+        self.web3_provider = settings.POLYGON_RPC_URL
+        self.contract_address = settings.TOURNAMENT_CONTRACT_ADDRESS
+        self.private_key = settings.BLOCKCHAIN_PRIVATE_KEY
         self.enabled = bool(self.contract_address and self.private_key)
         
         if self.enabled:

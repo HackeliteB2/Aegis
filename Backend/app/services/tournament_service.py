@@ -7,7 +7,7 @@ from datetime import datetime
 from app.models.tournament import Tournament, TournamentStatus, TournamentFormat, Bracket, tournament_teams
 from app.models.team import Team
 from app.models.user import User
-from app.models.match import Match
+from app.models.match import Match, MatchStatus
 from app.schemas.tournament import TournamentCreate, TournamentUpdate, TournamentStatsResponse
 from app.services.blockchain_service import BlockchainService
 from app.services.notification_service import NotificationService
@@ -482,7 +482,7 @@ class TournamentService:
         total_matches = db.query(Match).count()
         total_teams = db.query(func.count(func.distinct(tournament_teams.c.team_id))).scalar()
         upcoming_matches = db.query(Match).filter(
-            Match.status == "scheduled",
+            Match.status == MatchStatus.SCHEDULED,
             Match.scheduled_time > datetime.utcnow()
         ).count()
         

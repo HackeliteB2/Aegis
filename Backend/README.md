@@ -46,21 +46,56 @@
 ```
 BACKEND/
 ├── app/
-│   ├── api/
-│   │   ├── routes.py          # API endpoints
+│   ├── api/                   # API Routes
+│   │   ├── routes.py          # Main API router
+│   │   ├── auth_routes.py     # Authentication endpoints
+│   │   ├── tournament_routes.py # Tournament management
+│   │   ├── team_routes.py     # Team management
+│   │   ├── match_routes.py    # Match management
+│   │   ├── websocket_routes.py # Real-time WebSocket endpoints
 │   │   └── __init__.py
-│   ├── core/
-│   │   ├── config.py          # Configuration settings
-│   │   ├── database.py        # Database connection
+│   ├── core/                  # Core Configuration
+│   │   ├── config.py          # Settings and environment variables
+│   │   ├── database.py        # Database connection and setup
+│   │   ├── deps.py            # Dependency injection (auth, permissions)
 │   │   └── __init__.py
+│   ├── models/                # Database Models
+│   │   ├── user.py            # User model with roles
+│   │   ├── tournament.py      # Tournament model and enums
+│   │   ├── team.py            # Team model and associations
+│   │   ├── match.py           # Match model and results
+│   │   └── __init__.py
+│   ├── schemas/               # Pydantic Schemas
+│   │   ├── user.py            # User request/response schemas
+│   │   ├── tournament.py      # Tournament schemas
+│   │   ├── team.py            # Team schemas
+│   │   ├── match.py           # Match schemas
+│   │   └── __init__.py
+│   ├── services/              # Business Logic
+│   │   ├── user_service.py    # User management and authentication
+│   │   ├── tournament_service.py # Tournament operations
+│   │   ├── team_service.py    # Team management
+│   │   ├── match_service.py   # Match operations
+│   │   ├── blockchain_service.py # Blockchain integration
+│   │   ├── gemini_service.py  # AI match summaries
+│   │   ├── notification_service.py # Notifications
+│   │   └── websocket_service.py # Real-time updates
 │   ├── main.py                # FastAPI app initialization
 │   └── __init__.py
+├── .env                       # Environment variables (configured)
 ├── .env.example               # Environment variables template
-├── .gitignore                # Git ignore rules
-├── requirements.txt          # Python dependencies
-├── run.py                    # Development server runner
-├── start.bat                 # Windows startup script
-└── README.md                 # This file
+├── .env.production            # Production environment variables
+├── requirements.txt           # Python dependencies
+├── pyproject.toml             # Python project configuration
+├── Dockerfile                 # Docker containerization
+├── docker-compose.yml         # Docker multi-service setup
+├── alembic.ini                # Database migration configuration
+├── alembic/                   # Database migration scripts
+├── tests/                     # Test suite
+├── run.py                     # Development server runner
+├── test_complete_workflow.py  # End-to-end API testing
+├── setup_apis.py              # API configuration helper
+└── README.md                  # This documentation
 ```
 
 ## Setup

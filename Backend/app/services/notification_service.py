@@ -6,6 +6,7 @@ from sendgrid.helpers.mail import Mail, Email, To, Content
 import os
 from datetime import datetime
 
+from app.core.config import settings
 from app.models.user import User
 from app.models.team import Team, team_members
 from app.models.match import Notification
@@ -16,9 +17,9 @@ class NotificationService:
     """Service for managing user notifications and email sending."""
     
     def __init__(self):
-        self.sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
-        self.from_email = os.getenv("FROM_EMAIL", "noreply@aegis-tournaments.com")
-        self.sendgrid_enabled = bool(self.sendgrid_api_key)
+        self.sendgrid_api_key = settings.SENDGRID_API_KEY
+        self.from_email = settings.FROM_EMAIL
+        self.sendgrid_enabled = bool(self.sendgrid_api_key and self.sendgrid_api_key != "your-sendgrid-api-key")
         
         if self.sendgrid_enabled:
             try:

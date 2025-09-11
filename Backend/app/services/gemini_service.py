@@ -3,13 +3,15 @@ import os
 import json
 from typing import Dict, Any, Optional
 
+from app.core.config import settings
+
 
 class GeminiService:
     """Service for AI-powered match summary generation using Google Gemini."""
     
     def __init__(self):
-        self.api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
-        self.enabled = bool(self.api_key)
+        self.api_key = settings.GOOGLE_GEMINI_API_KEY
+        self.enabled = bool(self.api_key and self.api_key != "your-google-gemini-api-key")
         
         if self.enabled:
             try:

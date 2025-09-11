@@ -7,7 +7,7 @@ from datetime import datetime
 from app.models.team import Team, TeamStatus, team_members
 from app.models.user import User
 from app.models.tournament import tournament_teams, Tournament
-from app.models.match import Match
+from app.models.match import Match, MatchStatus
 from app.schemas.team import TeamCreate, TeamUpdate, TeamStatsResponse
 from app.services.notification_service import NotificationService
 
@@ -414,7 +414,7 @@ class TeamService:
         # Get match statistics
         total_matches = db.query(Match).filter(
             or_(Match.team1_id == team_id, Match.team2_id == team_id),
-            Match.status == "completed"
+            Match.status == MatchStatus.COMPLETED
         ).count()
         
         wins = db.query(Match).filter(
@@ -426,7 +426,7 @@ class TeamService:
         # Get recent form (last 10 matches)
         recent_matches = db.query(Match).filter(
             or_(Match.team1_id == team_id, Match.team2_id == team_id),
-            Match.status == "completed"
+            Match.status == MatchStatus.COMPLETED
         ).order_by(desc(Match.actual_end_time)).limit(10).all()
         
         recent_form = []
@@ -556,20 +556,15 @@ class TeamService:
         verified_teams = db.query(Team).filter(Team.is_verified == True).count()
         active_teams = db.query(Team).filter(Team.status == TeamStatus.ACTIVE).count()
         
-        teams_in_tournaments = db.query(func.count(func.distinct(tournament_teams.c.team_id))).scalar()
+        # Simplified count for teams in tournaments
+        teams_in_tournaments = db.query(tournament_teams).distinct(tournament_teams.c.team_id).count()
         
-        # Calculate average team size
-        avg_team_size_result = db.query(func.avg(
-            func.cast(
-                db.query(func.count(team_members.c.user_id)).filter(
-                    team_members.c.team_id == Team.id,
-                    team_members.c.is_active == True
-                ).as_scalar(), 
-                func.Float
-            )
-        )).scalar()
+        # Simplified average team size calculation
+        total_active_members = db.query(team_members).filter(
+            team_members.c.is_active == True
+        ).count()
         
-        avg_team_size = round(avg_team_size_result or 0, 2)
+        avg_team_size = round(total_active_members / total_teams, 2) if total_teams > 0 else 0.0
         
         return TeamStatsResponse(
             total_teams=total_teams,
