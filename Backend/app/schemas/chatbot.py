@@ -9,7 +9,7 @@ class ChatbotQuery(BaseModel):
     context: Optional[Dict[str, Any]] = Field(None, description="Additional context for the question")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "question": "How do I register my team for a tournament?",
                 "context": {
@@ -36,7 +36,7 @@ class ChatbotResponse(BaseModel):
     suggestions: Optional[List[str]] = Field(None, description="Suggested follow-up questions")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "answer": "To register your team for a tournament, you need to...",
                 "sources": [
@@ -63,7 +63,7 @@ class ChatbotSuggestions(BaseModel):
     user_context: Optional[Dict[str, Any]] = Field(None, description="User context for personalized suggestions")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "suggestions": [
                     "How do I create a tournament?",
@@ -82,7 +82,7 @@ class KnowledgeUpdate(BaseModel):
     timestamp: Optional[str] = Field(None, description="When the knowledge was created")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "content": "New tournament rule: Teams must have at least 5 players to participate in championship events.",
                 "metadata": {
@@ -106,7 +106,7 @@ class ChatbotStatus(BaseModel):
     error: Optional[str] = Field(None, description="Error message if any")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "service": "RAG Chatbot",
                 "status": "operational",
@@ -131,7 +131,7 @@ class ChatbotConversation(BaseModel):
     updated_at: str = Field(..., description="Last update timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "conversation_id": "conv_123456",
                 "messages": [
@@ -163,7 +163,7 @@ class ChatbotFeedback(BaseModel):
     timestamp: str = Field(..., description="Feedback timestamp")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "response_id": "resp_123456",
                 "rating": 4,
