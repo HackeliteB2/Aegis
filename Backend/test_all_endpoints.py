@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Complete endpoint testing for Aegis Backend API
@@ -157,6 +158,7 @@ class EndpointTester:
         admin_headers = {"Authorization": f"Bearer {self.tokens.get('admin', '')}"}
         organizer_headers = {"Authorization": f"Bearer {self.tokens.get('organizer', '')}"}
         player1_headers = {"Authorization": f"Bearer {self.tokens.get('player1', '')}"}
+        player2_headers = {"Authorization": f"Bearer {self.tokens.get('player2', '')}"}
 
         # Get current user
         self.test_endpoint("GET", "/auth/me", headers=admin_headers, description="Get admin profile")
