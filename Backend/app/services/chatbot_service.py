@@ -6,7 +6,7 @@ from datetime import datetime
 
 import chromadb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 try:
     from langchain_huggingface import HuggingFaceEmbeddings
 except ImportError:
@@ -207,15 +207,15 @@ class AegisRAGChatbotService:
                         # Add documents to vector store
                         texts = self.text_splitter.split_documents(knowledge_docs)
                         self.vector_store.add_documents(texts)
-                        print(f"📚 Added {len(texts)} knowledge chunks to ChromaDB")
+                        print(f"Added {len(texts)} knowledge chunks to ChromaDB")
                     else:
-                        print(f"📚 Knowledge base already loaded: {doc_count} documents")
+                        print(f"Knowledge base already loaded: {doc_count} documents")
                         
                 except Exception:
                     # Collection doesn't exist, create it
                     texts = self.text_splitter.split_documents(knowledge_docs)
                     self.vector_store.add_documents(texts)
-                    print(f"📚 Created knowledge base with {len(texts)} chunks")
+                    print(f"Created knowledge base with {len(texts)} chunks")
             
         except Exception as e:
             print(f"ERROR: Knowledge base init failed: {e}")
@@ -558,68 +558,51 @@ class AegisRAGChatbotService:
         return documents
     
     def _setup_qa_chain(self):
-        """Set up the QA chain with retrieval and custom prompt."""
-        if not self.vector_store or not self.llm:
+        """Set up the QA chain with retrieval and simplified prompt."""
+        print(f"DEBUG: Vector store available: {self.vector_store is not None}")
+        print(f"DEBUG: LLM available: {self.llm is not None}")
+        print(f"DEBUG: Vector store type: {type(self.vector_store)}")
+        print(f"DEBUG: LLM type: {type(self.llm)}")
+        
+        if self.vector_store is None or self.llm is None:
             print("ERROR: Cannot setup QA chain: Missing vector store or LLM")
             self.qa_chain = None
             return
         
-        # Custom prompt template for Aegis-specific responses
-        prompt_template = """
-        You are the official Aegis Tournament Management assistant, an expert system for esports tournament platform support.
-        
-        CONTEXT INFORMATION:
-        {context}
-        
-        CONVERSATION HISTORY:
-        {chat_history}
-        
-        SYSTEM CAPABILITIES:
-        - Provide accurate information about Aegis tournament platform features
-        - Help with tournament creation, management, and participation
-        - Explain user roles, permissions, and platform functionality
-        - Guide users through team registration and match procedures
-        - Clarify API endpoints and technical integration requirements
-        - Assist with troubleshooting and platform navigation
-        
-        RESPONSE GUIDELINES:
-        1. Answer only questions related to Aegis tournament management platform
-        2. Use the provided context to give accurate, specific information
-        3. Be helpful, professional, and actionable in your guidance
-        4. If context doesn't fully answer the question, provide what you can and suggest resources
-        5. Keep responses focused and comprehensive while being concise
-        6. Reference specific features and capabilities from the context when relevant
-        7. If asked about unrelated topics, politely redirect to Aegis platform questions
-        
-        USER QUESTION: {question}
-        
-        Please provide a helpful, accurate response based on the Aegis platform context:
-        """
+        # Simplified prompt template compatible with RetrievalQA
+        prompt_template = """You are the official Aegis Tournament Management assistant, an expert system for esports tournament platform support.
+
+Based on the following context about Aegis Tournament Management Platform, answer the question:
+
+Context:
+{context}
+
+Question: {question}
+
+Please provide a helpful, accurate response based on the Aegis platform context. Focus on tournament management, team registration, match procedures, user roles, and platform features."""
         
         PROMPT = PromptTemplate(
             template=prompt_template,
-            input_variables=["context", "chat_history", "question"]
+            input_variables=["context", "question"]
         )
         
         try:
-            # Create retrieval QA chain with memory
+            # Create simple retrieval QA chain without memory
             self.qa_chain = RetrievalQA.from_chain_type(
                 llm=self.llm,
                 chain_type="stuff",
                 retriever=self.vector_store.as_retriever(
                     search_type="similarity",
                     search_kwargs={
-                        "k": 4,  # Retrieve top 4 most relevant documents
-                        "score_threshold": 0.1  # Minimum relevance score
+                        "k": 4  # Retrieve top 4 most relevant documents
                     }
                 ),
                 return_source_documents=True,
                 chain_type_kwargs={
-                    "prompt": PROMPT,
-                    "memory": self.memory
+                    "prompt": PROMPT
                 }
             )
-            print("🔗 QA chain with retrieval and memory initialized")
+            print("QA chain with retrieval initialized")
         except Exception as e:
             print(f"ERROR: QA chain setup failed: {e}")
             self.qa_chain = None
@@ -769,10 +752,13 @@ class AegisRAGChatbotService:
         sources = []
         for doc in source_documents:
             sources.append({
-                "title": doc.metadata.get("title", "Aegis Documentation"),
                 "content": doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content,
-                "category": doc.metadata.get("category", "general"),
-                "priority": doc.metadata.get("priority", "medium")
+                "metadata": {
+                    "title": doc.metadata.get("title", "Aegis Documentation"),
+                    "category": doc.metadata.get("category", "general"),
+                    "priority": doc.metadata.get("priority", "medium"),
+                    "source": doc.metadata.get("source", "knowledge_base")
+                }
             })
         return sources
     

@@ -2,10 +2,27 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from .config import settings
 from typing import Generator
+import os
 
 Base = declarative_base()
 
-engine = create_engine(settings.DATABASE_URL)
+# Use SQLite for local testing if PostgreSQL fails
+database_url = settings.DATABASE_URL
+if database_url.startswith("postgresql://"):
+    # Try PostgreSQL first, fallback to SQLite if it fails
+    try:
+        engine = create_engine(database_url)
+        # Test connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        print(f"PostgreSQL connection failed: {e}")
+        print("Falling back to SQLite for local testing...")
+        database_url = "sqlite:///./aegis_local.db"
+        engine = create_engine(database_url, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(database_url, connect_args={"check_same_thread": False} if database_url.startswith("sqlite") else {})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
