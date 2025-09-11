@@ -12,16 +12,16 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, isAuthenticated, isAdmin } = useAuth();
+  const { login, isAuthenticated, isAdmin, isOrganizer } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // Redirect if already authenticated
     if (isAuthenticated) {
       if (isAdmin) {
-        router.push('/Admin');
+        router.push('/admin');
       } else {
-        router.push('/Dashboard');
+        router.push('/dashboard');
       }
     }
   }, [isAuthenticated, isAdmin, router]);
@@ -71,18 +71,18 @@ export default function AuthPage() {
               htmlFor="username"
               className="block text-sm font-medium text-green-300/80 mb-2"
             >
-              Operator ID
+              Operator ID (Email)
             </label>
             <input
               id="username"
               name="username"
-              type="text"
-              autoComplete="username"
+              type="email"
+              autoComplete="email"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 bg-gray-900/50 border border-green-500/40 rounded-md text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-              placeholder="username"
+              placeholder="user@example.com"
               disabled={isLoading}
             />
           </div>
