@@ -52,7 +52,7 @@ export default function DashboardPage() {
         <div className="relative z-10 text-center">
           <h1 className="text-2xl text-red-400 mb-4">Access Denied</h1>
           <p className="text-gray-400 mb-6">You need to be logged in to access the dashboard</p>
-          <Link href="/Auth/Login" className="text-green-400 hover:text-green-300">
+          <Link href="/auth/login" className="text-green-400 hover:text-green-300">
             Login →
           </Link>
         </div>

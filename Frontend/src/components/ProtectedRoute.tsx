@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ 
   children, 
   requireAdmin = false, 
-  redirectTo = '/Auth/Login' 
+  redirectTo = '/auth/login' 
 }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
   const router = useRouter();

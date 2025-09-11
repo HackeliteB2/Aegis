@@ -46,7 +46,7 @@ export default function Header() {
           ) : (
             <>
               <Link
-                href="/Auth/Login"
+                href="/auth/login"
                 className="font-medium text-gray-300 hover:text-green-400 transition-colors"
               >
                 Login

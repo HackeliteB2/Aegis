@@ -11,7 +11,17 @@ database_url = settings.DATABASE_URL
 if database_url.startswith("postgresql://"):
     # Try PostgreSQL first, fallback to SQLite if it fails
     try:
-        engine = create_engine(database_url)
+        engine = create_engine(
+            database_url,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            connect_args={
+                "connect_timeout": 10,
+                "application_name": "aegis_backend"
+            }
+        )
         # Test connection
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
