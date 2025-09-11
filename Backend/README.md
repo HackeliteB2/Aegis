@@ -31,6 +31,7 @@
 - **Tournament Recaps**: AI-generated tournament highlights and comprehensive analysis
 - **Player Profiles**: Dynamic player description generation with enhanced narratives
 - **Real-time Content**: High-quality, engaging content generation for all tournament events
+- **RAG-Enhanced Chatbot**: Intelligent tournament assistant with retrieval-augmented generation
 
 ### ⚡ Real-time Features
 - **WebSocket Support**: Live tournament updates and match scores
@@ -41,6 +42,14 @@
 - **Email Notifications**: SendGrid integration for automated emails
 - **In-app Notifications**: Comprehensive notification system
 - **Multi-channel Alerts**: Email, WebSocket, and in-app notifications
+
+### 🧠 RAG-Enhanced Chatbot
+- **Optional Authentication**: Works with both authenticated and anonymous users
+- **Tournament Assistance**: Intelligent help with tournament management
+- **Context-Aware Responses**: Personalized responses based on user role and context
+- **Safety Mechanisms**: Professional content filtering and scope-based responses
+- **Multi-Format Support**: ChromaDB vector storage with HuggingFace embeddings
+- **Observability**: LangFuse integration for conversation monitoring and analytics
 
 ## Project Structure
 
@@ -53,6 +62,7 @@ BACKEND/
 │   │   ├── tournament_routes.py # Tournament management
 │   │   ├── team_routes.py     # Team management
 │   │   ├── match_routes.py    # Match management
+│   │   ├── chatbot_routes.py  # RAG chatbot endpoints
 │   │   ├── websocket_routes.py # Real-time WebSocket endpoints
 │   │   └── __init__.py
 │   ├── core/                  # Core Configuration
@@ -71,6 +81,7 @@ BACKEND/
 │   │   ├── tournament.py      # Tournament schemas
 │   │   ├── team.py            # Team schemas
 │   │   ├── match.py           # Match schemas
+│   │   ├── chatbot.py         # Chatbot request/response schemas
 │   │   └── __init__.py
 │   ├── services/              # Business Logic
 │   │   ├── user_service.py    # User management and authentication
@@ -79,6 +90,7 @@ BACKEND/
 │   │   ├── match_service.py   # Match operations
 │   │   ├── blockchain_service.py # Blockchain integration
 │   │   ├── gemini_service.py  # AI match summaries
+│   │   ├── chatbot_service.py # RAG-enhanced chatbot
 │   │   ├── notification_service.py # Notifications
 │   │   └── websocket_service.py # Real-time updates
 │   ├── main.py                # FastAPI app initialization
@@ -198,6 +210,54 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
     ```json
     {
       "message": "Aegis Backend API is running"
+    }
+    ```
+
+### RAG Chatbot
+- **POST** `/api/v1/chatbot/ask`
+  - Ask the AI chatbot questions about tournaments and platform features
+  - Optional authentication (works with or without login)
+  - Request:
+    ```json
+    {
+      "question": "How do I create a tournament?",
+      "context": {}
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "answer": "To create a tournament...",
+      "sources": [{"content": "...", "metadata": {}}],
+      "confidence": 0.85,
+      "timestamp": "2024-01-01T12:00:00",
+      "user_context": {"user_id": "123", "role": "player"},
+      "suggestions": ["What are team requirements?", "..."]
+    }
+    ```
+
+- **GET** `/api/v1/chatbot/suggestions`
+  - Get conversation suggestions based on user context
+  - Response:
+    ```json
+    {
+      "suggestions": ["How do I create a tournament?", "..."],
+      "user_context": {"role": "player"}
+    }
+    ```
+
+- **GET** `/api/v1/chatbot/status`
+  - Get chatbot service status and capabilities
+  - Response:
+    ```json
+    {
+      "service": "Aegis RAG Chatbot",
+      "status": "operational",
+      "knowledge_base": "loaded",
+      "llm_backend": "Gemini 2.0 Flash",
+      "embedding_model": "HuggingFace MiniLM",
+      "features": ["RAG-enhanced responses", "..."],
+      "error": null
     }
     ```
 
@@ -325,10 +385,18 @@ The backend provides everything needed for a complete tournament management plat
 
 ## 🆕 Latest Updates
 
-### Version 1.0 - Production Ready (Latest)
+### Version 1.1 - RAG Chatbot Integration (Latest)
+- ✅ **RAG-Enhanced Chatbot**: Intelligent tournament assistant with Retrieval-Augmented Generation
+- ✅ **Optional Authentication**: Chatbot works with both authenticated and anonymous users
+- ✅ **Advanced AI Safety**: Professional content filtering and scope-based responses
+- ✅ **Vector Database**: ChromaDB integration with HuggingFace embeddings support
+- ✅ **LangFuse Observability**: Conversation monitoring and analytics integration
+- ✅ **Comprehensive Testing**: All chatbot endpoints tested with safety mechanisms verified
+
+### Version 1.0 - Production Ready
 - ✅ **Gemini 2.0 Flash Integration**: Upgraded to the latest AI model for superior content generation
 - ✅ **Complete Service Verification**: All 4 external services verified and tested
-- ✅ **Enhanced API Coverage**: 66+ endpoints with full CRUD operations
+- ✅ **Enhanced API Coverage**: 69+ endpoints with full CRUD operations
 - ✅ **Production-Ready Database**: PostgreSQL 17.5 with optimized schema
 - ✅ **Blockchain Integration**: Verified Polygon Mainnet connectivity
 - ✅ **Comprehensive Testing**: All endpoints and services tested and operational
@@ -369,4 +437,38 @@ curl -X POST 'http://localhost:8001/api/v1/auth/register' \
 curl -X POST 'http://localhost:8001/api/v1/auth/login' \
   -H 'Content-Type: application/json' \
   -d '{"email":"test@example.com","password":"TestPass123!"}'
+
+# Test RAG Chatbot (anonymous)
+curl -X POST 'http://localhost:8001/api/v1/chatbot/ask' \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"How do I create a tournament?"}'
+
+# Get chatbot suggestions
+curl 'http://localhost:8001/api/v1/chatbot/suggestions'
+
+# Check chatbot status
+curl 'http://localhost:8001/api/v1/chatbot/status'
+```
+
+### 🤖 RAG Chatbot Testing
+
+The intelligent chatbot can answer questions about tournament management:
+
+```bash
+# Test basic question
+curl -X POST 'http://localhost:8001/api/v1/chatbot/ask' \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What is Aegis?"}'
+
+# Test inappropriate content (safety mechanisms)
+curl -X POST 'http://localhost:8001/api/v1/chatbot/ask' \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"How can I hack the system?"}'
+
+# Expected response for inappropriate questions:
+# {
+#   "answer": "I'm the Aegis Tournament Management assistant, specialized in helping with esports tournaments...",
+#   "confidence": 0.0,
+#   "suggestions": ["How do I create a tournament?", "..."]
+# }
 ```
