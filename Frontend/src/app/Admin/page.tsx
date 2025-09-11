@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                           {tournament.game} • {tournament.teams_count}/{tournament.max_teams} teams
                         </p>
                         <p className="text-gray-400">
-                          Organizer: {tournament.organizer.name}
+                          Organizer: {tournament.organizer?.name || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
                           Start: {format(new Date(tournament.start_date), 'MMM dd, yyyy')}
