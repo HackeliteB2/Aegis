@@ -1,16 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authApi, type User } from '@/lib/api';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-  status: 'active' | 'suspended';
-  created_at: string;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -71,17 +63,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = async (authToken: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/auth/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+      // Set token temporarily for the API call
+      localStorage.setItem('aegis_token', authToken);
+      
+      const result = await authApi.me();
+      
+      if (result.success && result.data) {
+        setUser(result.data);
         return true;
       } else {
         throw new Error('Token verification failed');
@@ -96,17 +84,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const { user: userData, token: tokenData } = data;
+      const result = await authApi.login({ username, password });
+      
+      if (result.success && result.data) {
+        const { user: userData, token: tokenData } = result.data;
         
         // Store authentication data
         localStorage.setItem('aegis_token', tokenData.access_token);
@@ -117,8 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         return true;
       } else {
-        const errorData = await response.json();
-        console.error('Login failed:', errorData.detail || 'Unknown error');
+        console.error('Login failed:', result.error || 'Unknown error');
         return false;
       }
     } catch (error) {
@@ -138,13 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Optional: Call logout endpoint
     if (token) {
-      fetch('http://localhost:8000/api/v1/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }).catch(console.error);
+      authApi.logout().catch(console.error);
     }
   };
 

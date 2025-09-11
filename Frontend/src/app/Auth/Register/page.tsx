@@ -3,20 +3,24 @@
 import MatrixBackground from '../../../components/MatrixBackground';
 import Link from 'next/link';
 import { useState } from 'react';
+import { authApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
     const [operatorId, setOperatorId] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
+    const [name, setName] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
-        if (!operatorId.trim() || !email.trim() || !password || !confirm) {
+        if (!operatorId.trim() || !email.trim() || !password || !confirm || !name.trim()) {
             setError('All fields are required.');
             return;
         }
@@ -31,11 +35,24 @@ export default function RegisterPage() {
 
         try {
             setLoading(true);
-            // TODO: Replace with actual registration API call
-            console.log('Registering:', { operatorId, email, password });
-            // On success, redirect to login or dashboard
+            
+            const result = await authApi.register({
+                username: operatorId,
+                email: email,
+                name: name,
+                password: password,
+                role: 'user',
+                status: 'active'
+            });
+
+            if (result.success) {
+                // Registration successful, redirect to login
+                router.push('/Auth/Login?message=Registration successful. Please login.');
+            } else {
+                setError(result.error || 'Registration failed. Please try again.');
+            }
         } catch (err) {
-            setError('Registration failed. Try again.');
+            setError('Registration failed. Please check your connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -71,6 +88,26 @@ export default function RegisterPage() {
                             onChange={(e) => setOperatorId(e.target.value)}
                             className="w-full px-4 py-2 bg-gray-900/50 border border-green-500/40 rounded-md text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                             placeholder="operator-id"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="name"
+                            className="block text-sm font-medium text-green-300/80 mb-2"
+                        >
+                            Full Name
+                        </label>
+                        <input
+                            id="name"
+                            name="name"
+                            type="text"
+                            autoComplete="name"
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-900/50 border border-green-500/40 rounded-md text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                            placeholder="Full Name"
                         />
                     </div>
 

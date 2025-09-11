@@ -157,7 +157,7 @@ export default function AuthPage() {
             Unauthorized access is strictly prohibited. All activities are monitored.
           </p>
           <p className="text-xs text-green-400/70">
-            Default credentials: admin / admin123
+            Default credentials: SuperAdmin / Admin123+
           </p>
         </div>
       </div>
