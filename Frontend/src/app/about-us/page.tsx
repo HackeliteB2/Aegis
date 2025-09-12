@@ -1,6 +1,11 @@
 
+'use client';
+
 import Head from 'next/head';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import MatrixBackground from '@/components/MatrixBackground';
 
 export default function About() {
   const teamMembers = [
@@ -47,10 +52,12 @@ export default function About() {
         />
       </Head>
 
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-black text-white font-mono relative">
+        <MatrixBackground />
+        <Header />
 
         {/* Hero Section */}
-        <div className="container mx-auto px-6 py-16">
+        <div className="relative z-10 container mx-auto px-6 py-16 pt-20">
           <div className="text-center mb-16">
             <h1 className="text-5xl font-bold mb-6">
               About <span className="text-[#22C55E]">Project Aegis</span>
@@ -88,7 +95,7 @@ export default function About() {
               </div>
             </div>
             
-            <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
+            <div className="bg-gray-900/50 rounded-xl p-8 border border-green-500/30 backdrop-blur-sm">
               <h3 className="text-2xl font-bold mb-6 text-[#22C55E]">Why We Started</h3>
               <p className="text-gray-300 mb-4">
                 "After years of witnessing match-fixing allegations, biased seeding, and lack of 
@@ -140,7 +147,7 @@ export default function About() {
                   </svg>
                 )
               }].map(({title, desc, icon}, i) => (
-                <div key={i} className="bg-gray-800 rounded-xl p-8 border border-gray-700 text-center">
+                <div key={i} className="bg-gray-900/50 rounded-xl p-8 border border-green-500/30 text-center backdrop-blur-sm">
                   <div className="w-16 h-16 bg-[#22C55E] rounded-full flex items-center justify-center mx-auto mb-4">
                     {icon}
                   </div>
@@ -156,7 +163,7 @@ export default function About() {
             <h2 className="text-3xl font-bold text-center mb-12 text-[#22C55E]">Our Team</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {teamMembers.map((member, i) => (
-                <div key={i} className="bg-gray-800 rounded-xl p-6 border border-gray-700 text-center">
+                <div key={i} className="bg-gray-900/50 rounded-xl p-6 border border-green-500/30 text-center backdrop-blur-sm">
                   <div className="w-20 h-20 bg-[#22C55E] rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="font-bold text-black text-lg">{member.image}</span>
                   </div>
@@ -181,7 +188,7 @@ export default function About() {
                   }`}
                 >
                   <div className={`w-1/2 ${i % 2 === 0 ? 'pr-8 text-right' : 'pl-8'}`}>
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div className="bg-gray-900/50 rounded-xl p-6 border border-green-500/30 backdrop-blur-sm">
                       <div className="text-[#22C55E] font-bold text-lg mb-2">{milestone.year}</div>
                       <h3 className="text-xl font-bold mb-2 text-[#22C55E]">{milestone.title}</h3>
                       <p className="text-gray-300">{milestone.desc}</p>
@@ -197,7 +204,7 @@ export default function About() {
           </div>
 
           {/* CTA Section */}
-          <div className="text-center bg-gray-800 rounded-xl p-12 border border-gray-700">
+          <div className="text-center bg-gray-900/50 rounded-xl p-12 border border-green-500/30 backdrop-blur-sm">
             <h2 className="text-3xl font-bold mb-6 text-[#22C55E]">Ready to Join the Revolution?</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Be part of the next generation of esports tournaments. Experience transparency, 
@@ -212,12 +219,7 @@ export default function About() {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="relative z-10 w-full py-6 text-center">
-          <p className="text-xs text-gray-600">
-            &copy; {new Date().getFullYear()} AEGIS Corporation. All rights reserved.
-          </p>
-        </footer>
+        <Footer />
       </div>
     </>
   );

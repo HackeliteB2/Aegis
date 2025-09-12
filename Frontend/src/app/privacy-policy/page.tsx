@@ -1,6 +1,10 @@
-// pages/privacy.js or app/privacy/page.js
+'use client';
+
 import Head from 'next/head';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import MatrixBackground from '@/components/MatrixBackground';
 
 export default function Privacy() {
   const lastUpdated = "March 15, 2025";
@@ -95,8 +99,10 @@ export default function Privacy() {
         <meta name="description" content="Privacy policy for AEGIS security framework" />
       </Head>
 
-      <div className="min-h-screen bg-black text-white px-6 py-12 font-mono">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-black text-white font-mono relative">
+        <MatrixBackground />
+        <Header />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 py-16 pt-20">
           {/* Page Title */}
           <h1 className="text-5xl font-bold mb-4 text-center text-[#22C55E]">Privacy Policy</h1>
           <p className="text-sm text-gray-400 mb-12 text-center">
@@ -107,7 +113,7 @@ export default function Privacy() {
           {sections.map((section, index) => (
             <div
               key={index}
-              className="mb-10 bg-gray-900 border border-[#22C55E]/30 rounded-xl p-8 shadow-lg"
+              className="mb-10 bg-gray-900/50 border border-[#22C55E]/30 rounded-xl p-8 shadow-lg backdrop-blur-sm"
             >
               <h2 className="text-2xl font-bold mb-6 text-center text-[#22C55E]">
                 {section.title}
@@ -133,6 +139,8 @@ export default function Privacy() {
             </Link>
           </div>
         </div>
+
+        <Footer />
       </div>
     </>
   );

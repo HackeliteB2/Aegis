@@ -3,6 +3,9 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import MatrixBackground from '@/components/MatrixBackground';
 
 interface FormData {
   name: string;
@@ -52,8 +55,10 @@ export default function Contact() {
         />
       </Head>
 
-      <div className="min-h-screen bg-gray-900 text-white">
-        <div className="container mx-auto px-6 py-16">
+      <div className="min-h-screen bg-black text-white font-mono relative">
+        <MatrixBackground />
+        <Header />
+        <div className="relative z-10 container mx-auto px-6 py-16 pt-20">
           <div className="text-center mb-16">
             <h1 className="text-5xl font-bold mb-6">
               Get in <span style={{ color: green }}>Touch</span>
@@ -67,7 +72,7 @@ export default function Contact() {
           {/* Responsive grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto">
             {/* Contact Form */}
-            <section className="order-1 bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
+            <section className="order-1 bg-gray-900/50 rounded-xl p-8 border border-green-500/30 shadow-lg backdrop-blur-sm">
               <h2 className="text-2xl font-bold mb-6" style={{ color: green }}>
                 Send us a Message
               </h2>
@@ -110,7 +115,7 @@ export default function Contact() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 bg-black/50 border border-gray-600 rounded-lg focus:outline-none transition-colors backdrop-blur-sm"
                         placeholder="Your name"
                         style={{ borderColor: formData.name ? green : undefined }}
                         onFocus={(e) => (e.currentTarget.style.borderColor = green)}
@@ -125,7 +130,7 @@ export default function Contact() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 bg-black/50 border border-gray-600 rounded-lg focus:outline-none transition-colors backdrop-blur-sm"
                         placeholder="your@email.com"
                         style={{ borderColor: formData.email ? green : undefined }}
                         onFocus={(e) => (e.currentTarget.style.borderColor = green)}
@@ -158,7 +163,7 @@ export default function Contact() {
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg focus:outline-none transition-colors resize-none"
+                      className="w-full px-4 py-3 bg-black/50 border border-gray-600 rounded-lg focus:outline-none transition-colors resize-none backdrop-blur-sm"
                       placeholder="Tell us about your tournament needs..."
                       style={{ borderColor: formData.message ? green : undefined }}
                       onFocus={(e) => (e.currentTarget.style.borderColor = green)}
@@ -189,7 +194,7 @@ export default function Contact() {
 
             {/* Contact Info + Socials */}
             <section className="order-2 space-y-8">
-              <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
+              <div className="bg-gray-900/50 rounded-xl p-8 border border-green-500/30 shadow-lg backdrop-blur-sm">
                 <h3 className="text-xl font-bold mb-6" style={{ color: green }}>
                   Contact Information
                 </h3>
@@ -271,7 +276,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
+              <div className="bg-gray-900/50 rounded-xl p-8 border border-green-500/30 shadow-lg backdrop-blur-sm">
                 <h3 className="text-xl font-bold mb-4" style={{ color: green }}>
                   For Tournament Organizers
                 </h3>
@@ -292,7 +297,7 @@ export default function Contact() {
                 </Link>
               </div>
 
-              <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
+              <div className="bg-gray-900/50 rounded-xl p-8 border border-green-500/30 shadow-lg backdrop-blur-sm">
                 <h3 className="text-xl font-bold mb-4" style={{ color: green }}>
                   Follow Us
                 </h3>
@@ -359,12 +364,7 @@ export default function Contact() {
           </div>
         </div>
 
-        {/* Footer */}
-         <footer className="relative z-10 w-full py-6 text-center">
-        <p className="text-xs text-gray-600">
-          &copy; {new Date().getFullYear()} AEGIS Corporation. All rights reserved.
-        </p>
-      </footer>
+        <Footer />
       </div>
     </>
   );

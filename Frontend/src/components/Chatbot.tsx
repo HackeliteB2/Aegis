@@ -137,7 +137,7 @@ export default function Chatbot() {
       {/* Chatbot Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-4 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 ${
           isOpen 
             ? 'bg-gray-800 border border-green-500/50 text-green-400' 
             : 'bg-green-500 hover:bg-green-400 text-black'
@@ -152,7 +152,7 @@ export default function Chatbot() {
 
       {/* Chatbot Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] h-[32rem] bg-gray-900/95 border border-green-500/30 rounded-lg shadow-2xl backdrop-blur-sm font-mono">
+        <div className="fixed bottom-16 right-6 z-40 w-[28rem] max-w-[calc(100vw-3rem)] h-[36rem] bg-gray-900/95 border border-green-500/30 rounded-lg shadow-2xl backdrop-blur-sm font-mono">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-green-500/30">
             <div className="flex items-center space-x-2">
@@ -168,7 +168,7 @@ export default function Chatbot() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 h-80">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 h-[26rem]">
             {messages.length === 0 && (
               <div className="text-center text-gray-400 space-y-4">
                 <div className="flex items-center justify-center w-16 h-16 bg-green-400/10 rounded-full mx-auto">
@@ -188,7 +188,7 @@ export default function Chatbot() {
                         <button
                           key={index}
                           onClick={() => handleSuggestionClick(suggestion)}
-                          className="block w-full text-left text-xs bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 rounded p-2 transition-colors"
+                          className="block w-full text-left text-sm bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 rounded p-2 transition-colors"
                         >
                           "{suggestion}"
                         </button>
@@ -213,9 +213,9 @@ export default function Chatbot() {
                 >
                   <div className="prose prose-sm max-w-none">
                     {message.type === 'user' ? (
-                      <p className="text-black font-medium">{message.content}</p>
+                      <p className="text-black font-medium text-sm">{message.content}</p>
                     ) : (
-                      <div className="text-gray-200">
+                      <div className="text-gray-200 text-sm">
                         <ReactMarkdown>
                           {message.content}
                         </ReactMarkdown>
@@ -226,13 +226,13 @@ export default function Chatbot() {
                   {/* Sources */}
                   {message.sources && message.sources.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-gray-600/50">
-                      <div className="flex items-center text-xs text-gray-400 mb-2">
+                      <div className="flex items-center text-sm text-gray-400 mb-2">
                         <InformationCircleIcon className="w-3 h-3 mr-1" />
                         Sources
                       </div>
                       <div className="space-y-1">
                         {message.sources.slice(0, 2).map((source, index) => (
-                          <div key={index} className="text-xs bg-gray-700/30 rounded p-2">
+                          <div key={index} className="text-sm bg-gray-700/30 rounded p-2">
                             {source.content.slice(0, 100)}...
                           </div>
                         ))}
@@ -243,13 +243,13 @@ export default function Chatbot() {
                   {/* Suggestions */}
                   {message.suggestions && message.suggestions.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-gray-600/50">
-                      <p className="text-xs text-gray-400 mb-2">Related questions:</p>
+                      <p className="text-sm text-gray-400 mb-2">Related questions:</p>
                       <div className="space-y-1">
                         {message.suggestions.slice(0, 2).map((suggestion, index) => (
                           <button
                             key={index}
                             onClick={() => handleSuggestionClick(suggestion)}
-                            className="block w-full text-left text-xs bg-gray-700/30 hover:bg-gray-600/30 rounded p-2 transition-colors"
+                            className="block w-full text-left text-sm bg-gray-700/30 hover:bg-gray-600/30 rounded p-2 transition-colors"
                           >
                             {suggestion}
                           </button>
@@ -258,7 +258,7 @@ export default function Chatbot() {
                     </div>
                   )}
 
-                  <div className="text-xs text-gray-500 mt-2">
+                  <div className="text-sm text-gray-500 mt-2">
                     {message.timestamp.toLocaleTimeString([], { 
                       hour: '2-digit', 
                       minute: '2-digit' 
@@ -277,7 +277,7 @@ export default function Chatbot() {
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce delay-75" />
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce delay-150" />
                     </div>
-                    <span className="text-xs text-gray-400 ml-2">AEGIS is thinking...</span>
+                    <span className="text-sm text-gray-400 ml-2">AEGIS is thinking...</span>
                   </div>
                 </div>
               </div>
@@ -287,9 +287,9 @@ export default function Chatbot() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-green-500/30 p-4">
+          <div className="border-t border-green-500/30 px-3 py-5">
             {!isOnline && (
-              <div className="flex items-center text-xs text-yellow-400 mb-2">
+              <div className="flex items-center text-sm text-yellow-400 mb-1">
                 <ExclamationTriangleIcon className="w-4 h-4 mr-1" />
                 Chatbot is currently offline
               </div>
