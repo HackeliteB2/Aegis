@@ -15,9 +15,13 @@ import {
   PlusIcon,
   EyeIcon,
   PlayIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { authApi } from '@/lib/api';
 
 const formatSafeDate = (dateString: string | null | undefined) => {
   if (!dateString) return 'TBD';
@@ -44,6 +48,7 @@ const formatSafeDateTime = (dateString: string | null | undefined) => {
 export default function DashboardPage() {
   const { user, isAuthenticated, isAdmin, isOrganizer, isLoading, isLoggingOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches'>('overview');
+  const queryClient = useQueryClient();
 
   const { data: tournamentsResponse } = useQuery({
     queryKey: ['tournaments'],
@@ -66,6 +71,31 @@ export default function DashboardPage() {
   const tournaments = tournamentsResponse?.data || [];
   const teams = teamsResponse?.data || [];
   const matches = matchesResponse?.data || [];
+
+  // Role upgrade mutation
+  const becomeOrganizerMutation = useMutation({
+    mutationFn: () => authApi.updateProfile({ role: 'organizer' }),
+    onSuccess: (response) => {
+      if (response.success) {
+        toast.success('Congratulations! You are now a Tournament Organizer!');
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        // Force refresh the page to update context
+        window.location.reload();
+      } else {
+        toast.error(response.error || 'Failed to upgrade role');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to become organizer. Please try again.');
+      console.error('Role upgrade error:', error);
+    },
+  });
+
+  const handleBecomeOrganizer = () => {
+    if (confirm('Are you sure you want to become a Tournament Organizer? You will be able to create and manage tournaments.')) {
+      becomeOrganizerMutation.mutate();
+    }
+  };
 
   // Show loading during initial load or logout - prioritize logout state
   if (isLoggingOut) {
@@ -200,34 +230,64 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        {(isOrganizer || isAdmin) && (
-          <div className="bg-gray-900/80 border border-green-500/30 rounded-lg p-6 backdrop-blur-sm mb-8">
-            <h2 className="text-xl font-bold text-green-400 mb-4">Quick Actions</h2>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/tournaments/create"
-                className="flex items-center px-4 py-2 bg-green-500 text-black font-bold rounded-md hover:bg-green-400 transition-colors"
-              >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Create Tournament
-              </Link>
-              <Link
-                href="/teams/create"
-                className="flex items-center px-4 py-2 border border-green-500 text-green-400 font-bold rounded-md hover:bg-green-500 hover:text-black transition-colors"
-              >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Create Team
-              </Link>
-              <Link
-                href="/tournaments"
-                className="flex items-center px-4 py-2 border border-blue-500 text-blue-400 font-bold rounded-md hover:bg-blue-500 hover:text-black transition-colors"
-              >
-                <EyeIcon className="w-4 h-4 mr-2" />
-                Browse Tournaments
-              </Link>
-            </div>
+        <div className="bg-gray-900/80 border border-green-500/30 rounded-lg p-6 backdrop-blur-sm mb-8">
+          <h2 className="text-xl font-bold text-green-400 mb-4">Quick Actions</h2>
+          <div className="flex flex-wrap gap-4">
+            {(isOrganizer || isAdmin) ? (
+              <>
+                <Link
+                  href="/tournaments/create"
+                  className="flex items-center px-4 py-2 bg-green-500 text-black font-bold rounded-md hover:bg-green-400 transition-colors"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Tournament
+                </Link>
+                <Link
+                  href="/teams/create"
+                  className="flex items-center px-4 py-2 border border-green-500 text-green-400 font-bold rounded-md hover:bg-green-500 hover:text-black transition-colors"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Team
+                </Link>
+                <Link
+                  href="/tournaments"
+                  className="flex items-center px-4 py-2 border border-blue-500 text-blue-400 font-bold rounded-md hover:bg-blue-500 hover:text-black transition-colors"
+                >
+                  <EyeIcon className="w-4 h-4 mr-2" />
+                  Browse Tournaments
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* For players - show Become Organizer button */}
+                {user?.role === 'player' && (
+                  <button
+                    onClick={handleBecomeOrganizer}
+                    disabled={becomeOrganizerMutation.isPending}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold rounded-md hover:from-yellow-400 hover:to-yellow-500 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <StarIcon className="w-4 h-4 mr-2" />
+                    {becomeOrganizerMutation.isPending ? 'Upgrading...' : 'Become Organizer'}
+                  </button>
+                )}
+                <Link
+                  href="/teams/create"
+                  className="flex items-center px-4 py-2 border border-green-500 text-green-400 font-bold rounded-md hover:bg-green-500 hover:text-black transition-colors"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Team
+                </Link>
+                <Link
+                  href="/tournaments"
+                  className="flex items-center px-4 py-2 border border-blue-500 text-blue-400 font-bold rounded-md hover:bg-blue-500 hover:text-black transition-colors"
+                >
+                  <EyeIcon className="w-4 h-4 mr-2" />
+                  Browse Tournaments
+                </Link>
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Main Content Tabs */}
         <div className="bg-gray-900/80 border border-green-500/30 rounded-lg backdrop-blur-sm">
