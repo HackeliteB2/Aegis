@@ -48,6 +48,7 @@ const formatSafeDateTime = (dateString: string | null | undefined) => {
 export default function DashboardPage() {
   const { user, isAuthenticated, isAdmin, isOrganizer, isLoading, isLoggingOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches'>('overview');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: tournamentsResponse } = useQuery({
@@ -92,9 +93,16 @@ export default function DashboardPage() {
   });
 
   const handleBecomeOrganizer = () => {
-    if (confirm('Are you sure you want to become a Tournament Organizer? You will be able to create and manage tournaments.')) {
-      becomeOrganizerMutation.mutate();
-    }
+    setShowUpgradeModal(true);
+  };
+
+  const confirmUpgrade = () => {
+    setShowUpgradeModal(false);
+    becomeOrganizerMutation.mutate();
+  };
+
+  const cancelUpgrade = () => {
+    setShowUpgradeModal(false);
   };
 
   // Show loading during initial load or logout - prioritize logout state
@@ -548,6 +556,65 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Upgrade to Organizer Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 font-mono">
+          <div className="bg-gray-900/95 border border-green-500/30 rounded-lg p-6 max-w-md mx-4 shadow-2xl shadow-green-500/20">
+            <div className="text-center mb-6">
+              <StarIcon className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-green-400 mb-2">
+                Become Tournament Organizer
+              </h2>
+              <p className="text-gray-300 text-sm">
+                Are you ready to take your esports journey to the next level?
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h3 className="text-green-400 font-medium mb-2">✨ You'll be able to:</h3>
+                <ul className="text-gray-300 text-sm space-y-1">
+                  <li>• Create and manage tournaments</li>
+                  <li>• Generate blockchain-verified fair draws</li>
+                  <li>• Manage team registrations</li>
+                  <li>• Update match results</li>
+                  <li>• Access organizer tools and analytics</li>
+                </ul>
+              </div>
+              
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                <p className="text-blue-300 text-sm">
+                  <strong>Note:</strong> This change is permanent. You'll keep all your player privileges plus gain organizer capabilities.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelUpgrade}
+                className="flex-1 px-4 py-2 border border-gray-500 text-gray-400 font-bold rounded-md hover:bg-gray-500 hover:text-black transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpgrade}
+                disabled={becomeOrganizerMutation.isPending}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold rounded-md hover:from-yellow-400 hover:to-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {becomeOrganizerMutation.isPending ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                    Upgrading...
+                  </div>
+                ) : (
+                  'Yes, Upgrade Me!'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
