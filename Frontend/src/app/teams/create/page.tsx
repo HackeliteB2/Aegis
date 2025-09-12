@@ -56,16 +56,30 @@ export default function CreateTeamPage() {
     mutationFn: (data: CreateTeamRequest) => teamApi.create(data),
     onSuccess: (response) => {
       if (response.success && response.data) {
-        toast.success('Team created successfully!');
+        toast.success(`Team '${response.data.name}' created successfully!`);
         queryClient.invalidateQueries({ queryKey: ['teams'] });
-        router.push(`/teams/${response.data.id}`);
+        queryClient.invalidateQueries({ queryKey: ['all-teams'] });
+        // Redirect to teams list page since team detail page doesn't exist
+        router.push('/teams');
       } else {
-        toast.error(response.error || 'Failed to create team');
+        const errorMessage = response.error || 'Failed to create team. Please try again.';
+        toast.error(errorMessage);
+        console.error('Team creation failed:', response);
       }
     },
     onError: (error) => {
-      toast.error('Failed to create team');
       console.error('Team creation error:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.error('Network error: Unable to connect to server. Please check your connection and try again.');
+      } else if (error instanceof Error && error.message.includes('500')) {
+        toast.error('Server error: There was an issue processing your request. The development team has been notified.');
+      } else if (error instanceof Error) {
+        toast.error(`Error: ${error.message}`);
+      } else {
+        toast.error('An unexpected error occurred. Please try again or contact support if the issue persists.');
+      }
     },
   });
 

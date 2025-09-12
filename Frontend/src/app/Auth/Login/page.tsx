@@ -170,9 +170,12 @@ export default function AuthPage() {
           <p className="text-xs text-gray-500">
             Unauthorized access is strictly prohibited. All activities are monitored.
           </p>
-          <p className="text-xs text-green-400/70">
-            Default credentials: superadmin@aegis.example.com / Admin123+
-          </p>
+          <div className="text-xs text-green-400/70 space-y-1">
+            <p>Default credentials:</p>
+            <p>Admin: superadmin@aegis.example.com / Admin123+</p>
+            <p>Organizer: Organizer@aegis.example.com / Organizer123</p>
+            <p>Player: player@aegis.example.com / Player123</p>
+          </div>
         </div>
       </div>
     </div>

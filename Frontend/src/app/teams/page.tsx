@@ -62,13 +62,13 @@ const TeamCard: React.FC<{ team: Team }> = ({ team }) => {
       )}
 
       <div className="flex space-x-3">
-        <Link
-          href={`/teams/${team.id}`}
-          className="flex-1 bg-green-500 text-black font-bold py-2 px-4 rounded-md hover:bg-green-400 transition-colors text-center flex items-center justify-center"
+        <button
+          disabled
+          className="flex-1 bg-gray-600 text-gray-400 font-bold py-2 px-4 rounded-md transition-colors text-center flex items-center justify-center cursor-not-allowed opacity-50"
         >
           <EyeIcon className="w-4 h-4 mr-2" />
-          View Team
-        </Link>
+          View Team (Coming Soon)
+        </button>
       </div>
     </div>
   );

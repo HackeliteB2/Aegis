@@ -16,7 +16,7 @@ class TeamService:
     def __init__(self):
         self.notification_service = NotificationService()
 
-    def create_team(self, db: Session, team_data: TeamCreate, captain_id: UUID) -> Team:
+    def create_team(self, db: Session, team_data: TeamCreate, captain_id: UUID) -> dict:
         """Create a new team with the user as captain."""
         
         # Check if user is already captain of another team
@@ -60,7 +60,40 @@ class TeamService:
             "team_created", team_id=team.id
         )
         
-        return team
+        # Get captain info and return formatted response
+        db.refresh(team)  # Ensure relationships are loaded
+        captain_name = team.captain.name if team.captain else "Unknown"
+        
+        # Calculate member count (should be 1 - just the captain)
+        member_count = db.query(team_members).filter(
+            team_members.c.team_id == team.id,
+            team_members.c.is_active == True
+        ).count()
+        
+        # Calculate win rate
+        total_games = team.wins + team.losses + team.draws
+        win_rate = (team.wins / total_games * 100) if total_games > 0 else 0.0
+        
+        return {
+            "id": team.id,
+            "name": team.name,
+            "tag": team.tag,
+            "description": team.description,
+            "logo_url": team.logo_url,
+            "contact_email": team.contact_email,
+            "discord_server": team.discord_server,
+            "status": team.status,
+            "captain_id": team.captain_id,
+            "captain_name": captain_name,
+            "is_verified": team.is_verified,
+            "wins": team.wins,
+            "losses": team.losses,
+            "draws": team.draws,
+            "win_rate": round(win_rate, 2),
+            "member_count": member_count,
+            "created_at": team.created_at,
+            "updated_at": team.updated_at
+        }
 
     def get_team(self, db: Session, team_id: UUID) -> Optional[Team]:
         """Get team by ID."""

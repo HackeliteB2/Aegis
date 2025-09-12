@@ -287,7 +287,7 @@ export default function DashboardPage() {
                   <EyeIcon className="w-4 h-4 mr-2" />
                   Browse Tournaments
                 </Link>
-                {(isAdmin || isOrganizer) && (
+                {isAdmin && (
                   <button
                     onClick={() => setActiveTab('admin-teams')}
                     className="flex items-center px-4 py-2 border border-purple-500 text-purple-400 font-bold rounded-md hover:bg-purple-500 hover:text-black transition-colors"
@@ -337,7 +337,7 @@ export default function DashboardPage() {
               { id: 'tournaments', label: 'Tournaments' },
               { id: 'teams', label: 'My Teams' },
               { id: 'matches', label: 'Matches' },
-              ...(isAdmin || isOrganizer ? [{ id: 'admin-teams', label: 'All Teams' }] : []),
+              ...(isAdmin ? [{ id: 'admin-teams', label: 'All Teams' }] : []),
             ].map(tab => (
               <button
                 key={tab.id}
@@ -530,12 +530,9 @@ export default function DashboardPage() {
                           <p className="text-gray-400">Record: {team.wins || 0}-{team.losses || 0}-{team.draws || 0}</p>
                         </div>
 
-                        <Link
-                          href={`/teams/${team.id}`}
-                          className="text-blue-400 hover:text-blue-300 text-sm"
-                        >
-                          View Team →
-                        </Link>
+                        <span className="text-gray-500 text-sm cursor-not-allowed">
+                          View Team (Coming Soon) →
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -598,7 +595,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {activeTab === 'admin-teams' && (isAdmin || isOrganizer) && (
+            {activeTab === 'admin-teams' && isAdmin && (
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold text-green-400">All Teams Management</h3>
@@ -672,12 +669,12 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex space-x-2">
-                          <Link
-                            href={`/teams/${team.id}`}
-                            className="flex-1 text-blue-400 hover:text-blue-300 text-sm text-center py-1 border border-blue-400/30 rounded hover:bg-blue-400/10 transition-colors"
+                          <button
+                            disabled
+                            className="flex-1 text-gray-500 text-sm text-center py-1 border border-gray-500/30 rounded cursor-not-allowed opacity-50"
                           >
-                            View
-                          </Link>
+                            View (Soon)
+                          </button>
                           {team.status === 'active' ? (
                             <button className="flex-1 text-red-400 hover:text-red-300 text-sm py-1 border border-red-400/30 rounded hover:bg-red-400/10 transition-colors">
                               Suspend
