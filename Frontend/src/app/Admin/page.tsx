@@ -78,21 +78,33 @@ export default function AdminDashboard() {
     refetchInterval: 30000,
   });
 
-  // Show loading during initial load or logout
-  if (isLoading || isLoggingOut) {
+  // Show loading during initial load or logout - prioritize logout state
+  if (isLoggingOut) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <MatrixBackground />
         <div className="relative z-10 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
-          <p className="text-green-400">{isLoggingOut ? 'Logging out...' : 'Loading...'}</p>
+          <p className="text-green-400">Logging out...</p>
         </div>
       </div>
     );
   }
 
-  // Don't show access denied if we're logging out
-  if (!isAdmin && !isLoggingOut) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show access denied if not loading and not logging out
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <MatrixBackground />

@@ -71,6 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     setIsLoading(false);
+    // Reset logout state on mount (when user navigates to login page)
+    setIsLoggingOut(false);
   }, []);
 
   const isTokenExpired = (token: string): boolean => {
@@ -111,6 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      // Reset logout state when attempting to login
+      setIsLoggingOut(false);
       
       const result = await authApi.login({ email: username, password });
       
@@ -138,24 +142,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Set logging out state immediately and keep it true
     setIsLoggingOut(true);
-    
-    // Optional: Call logout endpoint first
-    if (token) {
-      authApi.logout().catch(console.error);
-    }
     
     // Redirect to login page immediately (replace to prevent back navigation)
     router.replace('/auth/login');
     
-    // Clear authentication data after navigation starts
-    setTimeout(() => {
-      localStorage.removeItem('aegis_token');
-      localStorage.removeItem('aegis_user');
-      setToken(null);
-      setUser(null);
-      setIsLoggingOut(false);
-    }, 50);
+    // Clear authentication data immediately
+    localStorage.removeItem('aegis_token');
+    localStorage.removeItem('aegis_user');
+    setToken(null);
+    setUser(null);
+    
+    // Optional: Call logout endpoint
+    if (token) {
+      authApi.logout().catch(console.error);
+    }
+    
+    // Keep logging out state true - it will reset when the component unmounts
+    // Don't reset isLoggingOut to avoid any flash
   };
 
   const isAuthenticated = !!(user && token);
