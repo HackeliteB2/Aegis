@@ -168,7 +168,7 @@ export default function TournamentsPage() {
       <MatrixBackground />
       <Header />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 pt-24">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold text-green-400 tracking-wider mb-4">
             Tournaments
