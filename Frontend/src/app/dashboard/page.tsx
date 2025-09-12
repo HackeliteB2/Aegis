@@ -117,7 +117,7 @@ export default function DashboardPage() {
       <MatrixBackground />
       <Header />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 pt-24">
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-green-400 mb-2">

@@ -15,7 +15,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ userName, role, initial }) =>
 
   const handleLogout = () => {
     logout();
-    router.push('/Auth');
   };
 
   // Use auth context data if props are not provided

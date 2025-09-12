@@ -31,7 +31,7 @@ const formatSafeDate = (dateString: string | null | undefined, formatStr: string
 };
 
 export default function AdminDashboard() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading, isLoggingOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tournaments' | 'system'>('overview');
 
   const { data: healthResponse } = useQuery({
@@ -78,6 +78,19 @@ export default function AdminDashboard() {
     refetchInterval: 30000,
   });
 
+  // Show loading during initial load or logout
+  if (isLoading || isLoggingOut) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400">{isLoggingOut ? 'Logging out...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
@@ -109,7 +122,7 @@ export default function AdminDashboard() {
     completedMatches: matches.filter(m => m.status === 'completed').length,
   };
 
-  const systemHealth = healthResponse?.data?.status === 'healthy';
+  const systemHealth = healthResponse?.data?.status === 'ok';
   const recentActivity = [
     {
       timestamp: new Date(),

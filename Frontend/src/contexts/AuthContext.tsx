@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  isLoggingOut: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isOrganizer: boolean;
@@ -34,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -136,6 +138,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    setIsLoggingOut(true);
+    
     // Clear authentication data
     localStorage.removeItem('aegis_token');
     localStorage.removeItem('aegis_user');
@@ -149,6 +153,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Redirect to login page
     router.push('/auth/login');
+    
+    // Reset logging out state after navigation
+    setTimeout(() => setIsLoggingOut(false), 100);
   };
 
   const isAuthenticated = !!(user && token);
@@ -161,6 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isLoading,
+    isLoggingOut,
     isAuthenticated,
     isAdmin,
     isOrganizer,
