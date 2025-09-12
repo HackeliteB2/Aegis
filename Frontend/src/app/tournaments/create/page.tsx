@@ -16,7 +16,8 @@ import {
   CurrencyDollarIcon,
   UsersIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -146,14 +147,24 @@ export default function CreateTournamentPage() {
       <MatrixBackground />
       <Header />
       
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-green-400 tracking-wider mb-2">
-            Create Tournament
-          </h1>
-          <p className="text-gray-400">
-            Set up a new esports tournament with blockchain-verified fairness
-          </p>
+      <div className="relative z-10 container mx-auto px-4 py-8 pt-24 max-w-4xl">
+        <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-green-400 hover:text-green-300 transition-colors mb-6 group"
+          >
+            <ArrowLeftIcon className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </button>
+          
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-green-400 tracking-wider mb-2">
+              Create Tournament
+            </h1>
+            <p className="text-gray-400">
+              Set up a new esports tournament with blockchain-verified fairness
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
