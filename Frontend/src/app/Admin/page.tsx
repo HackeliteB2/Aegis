@@ -343,12 +343,9 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-green-400">User Management</h3>
-                  <Link
-                    href="/admin/users"
-                    className="text-blue-400 hover:text-blue-300"
-                  >
-                    View All Users →
-                  </Link>
+                  <span className="text-gray-500 text-sm">
+                    Showing first 9 users
+                  </span>
                 </div>
                 
                 {isLoadingUsers ? (
