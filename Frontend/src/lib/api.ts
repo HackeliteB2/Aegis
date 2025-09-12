@@ -110,6 +110,7 @@ export interface CreateTeamRequest {
   name: string;
   tag?: string;
   description?: string;
+  preferred_games?: string;
 }
 
 // Match types
