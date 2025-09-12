@@ -1,16 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { authApi, type User } from '@/lib/api';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-  status: 'active' | 'suspended';
-  created_at: string;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -18,8 +11,10 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  isLoggingOut: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isOrganizer: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +35,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Check for stored authentication data on mount
@@ -48,17 +45,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (storedToken && storedUser) {
       try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        
-        // Verify token is still valid
-        verifyToken(storedToken).catch(() => {
-          // Token is invalid, clear storage
+        // Check if token is expired before setting it
+        if (isTokenExpired(storedToken)) {
+          console.log('Stored token is expired, clearing storage');
           localStorage.removeItem('aegis_token');
           localStorage.removeItem('aegis_user');
-          setToken(null);
-          setUser(null);
-        });
+        } else {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          
+          // Verify token is still valid with server
+          verifyToken(storedToken).catch(() => {
+            // Token is invalid, clear storage
+            localStorage.removeItem('aegis_token');
+            localStorage.removeItem('aegis_user');
+            setToken(null);
+            setUser(null);
+          });
+        }
       } catch (error) {
         // Invalid stored data, clear it
         localStorage.removeItem('aegis_token');
@@ -67,21 +71,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     setIsLoading(false);
+    // Reset logout state on mount (when user navigates to login page)
+    setIsLoggingOut(false);
   }, []);
+
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      return payload.exp < currentTime;
+    } catch (error) {
+      return true; // If we can't parse it, consider it expired
+    }
+  };
 
   const verifyToken = async (authToken: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/auth/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // First check if token is expired
+      if (isTokenExpired(authToken)) {
+        console.log('Token is expired, clearing storage');
+        throw new Error('Token is expired');
+      }
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+      // Set token temporarily for the API call
+      localStorage.setItem('aegis_token', authToken);
+      
+      const result = await authApi.me();
+      
+      if (result.success && result.data) {
+        setUser(result.data);
         return true;
       } else {
         throw new Error('Token verification failed');
@@ -95,18 +113,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      // Reset logout state when attempting to login
+      setIsLoggingOut(false);
       
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const { user: userData, token: tokenData } = data;
+      const result = await authApi.login({ email: username, password });
+      
+      if (result.success && result.data) {
+        const { user: userData, token: tokenData } = result.data;
         
         // Store authentication data
         localStorage.setItem('aegis_token', tokenData.access_token);
@@ -117,8 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         return true;
       } else {
-        const errorData = await response.json();
-        console.error('Login failed:', errorData.detail || 'Unknown error');
+        console.error('Login failed:', result.error || 'Unknown error');
         return false;
       }
     } catch (error) {
@@ -130,7 +142,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Clear authentication data
+    // Set logging out state immediately and keep it true
+    setIsLoggingOut(true);
+    
+    // Redirect to login page immediately (replace to prevent back navigation)
+    router.replace('/auth/login');
+    
+    // Clear authentication data immediately
     localStorage.removeItem('aegis_token');
     localStorage.removeItem('aegis_user');
     setToken(null);
@@ -138,18 +156,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Optional: Call logout endpoint
     if (token) {
-      fetch('http://localhost:8000/api/v1/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }).catch(console.error);
+      authApi.logout().catch(console.error);
     }
+    
+    // Keep logging out state true - it will reset when the component unmounts
+    // Don't reset isLoggingOut to avoid any flash
   };
 
   const isAuthenticated = !!(user && token);
   const isAdmin = user?.role === 'admin';
+  const isOrganizer = user?.role === 'organizer';
 
   const value: AuthContextType = {
     user,
@@ -157,8 +173,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isLoading,
+    isLoggingOut,
     isAuthenticated,
     isAdmin,
+    isOrganizer,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

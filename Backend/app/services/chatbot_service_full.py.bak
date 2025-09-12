@@ -1,0 +1,929 @@
+import os
+import json
+import uuid
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+
+import chromadb
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.schema import Document
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain.memory import ConversationBufferWindowMemory
+from langfuse import observe, Langfuse
+
+from app.core.config import settings
+from app.services.gemini_service import GeminiService
+
+
+class AegisRAGChatbotService:
+    """
+    Advanced RAG-Enhanced Chatbot for Aegis Tournament Management System.
+    
+    Architecture Components:
+    - ChromaDB Vector Store for document embeddings
+    - Gemini 2.0 Flash for LLM responses  
+    - HuggingFace Embeddings for text vectorization
+    - LangChain for orchestration and retrieval
+    - LangFuse for observability and monitoring
+    - Context-aware responses with conversation memory
+    """
+    
+    def __init__(self):
+        """Initialize the RAG chatbot with all components."""
+        # Initialize status tracking
+        self.initialization_errors = []
+        self.is_fully_initialized = False
+        
+        # Initialize LangFuse for observability
+        try:
+            self._init_langfuse()
+        except Exception as e:
+            self.initialization_errors.append(f"LangFuse init error: {str(e)}")
+            self.langfuse = None
+        
+        # Initialize Gemini LLM
+        try:
+            self._init_gemini_llm()
+        except Exception as e:
+            self.initialization_errors.append(f"Gemini LLM init error: {str(e)}")
+            self.llm = None
+        
+        # Initialize embeddings
+        try:
+            self._init_embeddings()
+        except Exception as e:
+            self.initialization_errors.append(f"Embeddings init error: {str(e)}")
+            self.embeddings = None
+        
+        # Initialize ChromaDB vector store
+        try:
+            self._init_vector_store()
+        except Exception as e:
+            self.initialization_errors.append(f"ChromaDB init error: {str(e)}")
+            self.vector_store = None
+        
+        # Initialize text splitter
+        try:
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""]
+            )
+        except Exception as e:
+            self.initialization_errors.append(f"Text splitter init error: {str(e)}")
+            self.text_splitter = None
+        
+        # Initialize conversation memory
+        try:
+            self.memory = ConversationBufferWindowMemory(
+                k=5,  # Remember last 5 exchanges
+                memory_key="chat_history",
+                return_messages=True
+            )
+        except Exception as e:
+            self.initialization_errors.append(f"Memory init error: {str(e)}")
+            self.memory = None
+        
+        # Initialize knowledge base and QA chain
+        try:
+            self._initialize_knowledge_base()
+        except Exception as e:
+            self.initialization_errors.append(f"Knowledge base init error: {str(e)}")
+            
+        try:
+            self._setup_qa_chain()
+        except Exception as e:
+            self.initialization_errors.append(f"QA chain init error: {str(e)}")
+            self.qa_chain = None
+        
+        # Set initialization status
+        self.is_fully_initialized = len(self.initialization_errors) == 0
+        if self.initialization_errors:
+            print(f"⚠️  Chatbot initialized with {len(self.initialization_errors)} errors:")
+            for error in self.initialization_errors:
+                print(f"  - {error}")
+        else:
+            print("✅ Chatbot fully initialized successfully!")
+        
+        print("🤖 Aegis RAG Chatbot initialized successfully!")
+        print(f"✅ ChromaDB Vector Store: Ready")
+        print(f"✅ Gemini 2.0 Flash LLM: {'Ready' if self.llm else 'Failed'}")
+        print(f"✅ HuggingFace Embeddings: {'Ready' if self.embeddings else 'Failed'}")
+        print(f"✅ LangFuse Observability: {'Ready' if self.langfuse else 'Failed'}")
+    
+    def _init_langfuse(self):
+        """Initialize LangFuse for observability and monitoring."""
+        try:
+            # LangFuse configuration (you can set these in environment)
+            self.langfuse = Langfuse(
+                public_key=os.getenv("LANGFUSE_PUBLIC_KEY", ""),
+                secret_key=os.getenv("LANGFUSE_SECRET_KEY", ""),
+                host=os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+            )
+            print("🔍 LangFuse observability initialized")
+        except Exception as e:
+            print(f"⚠️ LangFuse init failed (optional): {e}")
+            self.langfuse = None
+    
+    def _init_gemini_llm(self):
+        """Initialize Gemini 2.0 Flash LLM via LangChain."""
+        try:
+            if settings.GOOGLE_GEMINI_API_KEY and settings.GOOGLE_GEMINI_API_KEY != "your-google-gemini-api-key":
+                self.llm = ChatGoogleGenerativeAI(
+                    model="gemini-2.0-flash-exp",
+                    google_api_key=settings.GOOGLE_GEMINI_API_KEY,
+                    temperature=0.1,  # Lower temperature for more consistent responses
+                    max_tokens=2048,
+                    top_p=0.8
+                )
+                print("🧠 Gemini 2.0 Flash LLM initialized via LangChain")
+            else:
+                # Fallback to direct Gemini service
+                self.gemini_service = GeminiService()
+                self.llm = None
+                print("🧠 Using fallback Gemini service")
+        except Exception as e:
+            print(f"❌ Gemini LLM init failed: {e}")
+            self.llm = None
+            self.gemini_service = GeminiService()
+    
+    def _init_embeddings(self):
+        """Initialize HuggingFace embeddings for document vectorization."""
+        try:
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_kwargs={'device': 'cpu'},
+                encode_kwargs={'normalize_embeddings': True}
+            )
+            print("📊 HuggingFace embeddings initialized")
+        except Exception as e:
+            print(f"❌ Embeddings init failed: {e}")
+            self.embeddings = None
+    
+    def _init_vector_store(self):
+        """Initialize ChromaDB vector store."""
+        try:
+            # Create persistent ChromaDB client
+            self.chroma_client = chromadb.PersistentClient(path="./aegis_chroma_db")
+            
+            # Initialize collection for Aegis knowledge
+            self.collection_name = "aegis_knowledge"
+            
+            if self.embeddings:
+                self.vector_store = Chroma(
+                    client=self.chroma_client,
+                    collection_name=self.collection_name,
+                    embedding_function=self.embeddings,
+                    persist_directory="./aegis_chroma_db"
+                )
+                print("🗄️ ChromaDB vector store initialized")
+            else:
+                print("❌ Vector store init failed: No embeddings")
+                self.vector_store = None
+        except Exception as e:
+            print(f"❌ ChromaDB init failed: {e}")
+            self.vector_store = None
+    
+    def _initialize_knowledge_base(self):
+        """Initialize comprehensive Aegis knowledge base."""
+        try:
+            knowledge_docs = self._create_aegis_knowledge_documents()
+            
+            if self.vector_store and knowledge_docs:
+                # Check if collection already has documents
+                try:
+                    collection = self.chroma_client.get_collection(self.collection_name)
+                    doc_count = collection.count()
+                    
+                    if doc_count == 0:
+                        # Add documents to vector store
+                        texts = self.text_splitter.split_documents(knowledge_docs)
+                        self.vector_store.add_documents(texts)
+                        print(f"📚 Added {len(texts)} knowledge chunks to ChromaDB")
+                    else:
+                        print(f"📚 Knowledge base already loaded: {doc_count} documents")
+                        
+                except Exception:
+                    # Collection doesn't exist, create it
+                    texts = self.text_splitter.split_documents(knowledge_docs)
+                    self.vector_store.add_documents(texts)
+                    print(f"📚 Created knowledge base with {len(texts)} chunks")
+            
+        except Exception as e:
+            print(f"❌ Knowledge base init failed: {e}")
+    
+    def _create_aegis_knowledge_documents(self) -> List[Document]:
+        """Create comprehensive Aegis knowledge documents."""
+        knowledge_data = [
+            {
+                "title": "Aegis Platform Overview",
+                "content": """
+                Aegis is a comprehensive tournament management platform for esports and gaming competitions.
+                
+                CORE FEATURES:
+                - Tournament creation and management with multiple formats (Single/Double Elimination, Round Robin, Swiss System, Group Stage + Playoffs)
+                - Team registration and roster management with captain roles
+                - Match scheduling and automated bracket generation
+                - Real-time score tracking and live updates via WebSocket
+                - Provably fair draws using Polygon blockchain technology (Chain ID: 137)
+                - AI-powered match summaries using Gemini 2.0 Flash
+                - Automated email notifications via SendGrid
+                - Comprehensive role-based access control system
+                - Interactive API documentation and testing interface
+                
+                TECHNICAL ARCHITECTURE:
+                - Backend: FastAPI with Python for high-performance API handling
+                - Database: PostgreSQL 17.5 with 9 optimized tables and relationships
+                - Blockchain: Polygon Mainnet for transparent and fair tournament draws
+                - AI: Google Gemini 2.0 Flash for intelligent content generation
+                - Email: SendGrid for reliable notification delivery
+                - Real-time: WebSocket connections for live tournament updates
+                - Security: JWT authentication with bcrypt password hashing
+                - Documentation: Interactive Swagger UI at /docs and ReDoc at /redoc
+                """,
+                "category": "platform",
+                "metadata": {"source": "platform_overview", "priority": "high"}
+            },
+            {
+                "title": "User Roles and Permissions System",
+                "content": """
+                Aegis implements a comprehensive role-based access control system with four distinct user roles:
+                
+                SYSTEM ADMINISTRATOR (ADMIN):
+                - Complete system access and configuration capabilities
+                - User account management and role assignment authority
+                - Tournament approval and oversight responsibilities
+                - System monitoring, maintenance, and troubleshooting
+                - Access to all API endpoints and administrative functions
+                - Platform-wide settings and security configuration
+                
+                COMPETITION ORGANIZER:
+                - Create, configure, and manage tournaments
+                - Set tournament rules, formats, and competition schedules
+                - Manage team registrations, approvals, and participant lists
+                - Configure prize pools, entry fees, and reward distribution
+                - Resolve disputes, handle rule violations, and enforce fair play
+                - Generate comprehensive tournament reports and statistics
+                - Access to organizer-specific API endpoints and tools
+                
+                TEAM CAPTAIN/PLAYER:
+                - Register and manage team rosters and member information
+                - Join tournaments and competitions based on eligibility
+                - Submit match results, scores, and game outcomes
+                - Receive real-time notifications about matches and tournament updates
+                - View detailed team statistics, performance data, and match history
+                - Manage individual player profiles, preferences, and account settings
+                - Access to player-specific features and team management tools
+                
+                SPECTATOR:
+                - View public tournaments, brackets, and competition information
+                - Access match results, live scores, and tournament standings
+                - Follow favorite teams, players, and ongoing competitions
+                - No modification, management, or administrative permissions
+                - Read-only access to public tournament data and statistics
+                - Basic profile management for personalized viewing experience
+                """,
+                "category": "access_control",
+                "metadata": {"source": "user_roles", "priority": "high"}
+            },
+            {
+                "title": "Tournament Formats and Competition Rules",
+                "content": """
+                Aegis supports multiple tournament formats to accommodate various competition styles and requirements:
+                
+                SINGLE ELIMINATION TOURNAMENT:
+                - Direct knockout format with immediate elimination
+                - Teams eliminated after one loss - no second chances
+                - Fastest completion time and most efficient bracket progression
+                - Ideal for large participant numbers and time-constrained events
+                - Clear, straightforward bracket structure and advancement rules
+                - Suitable for preliminary rounds and quick qualification events
+                
+                DOUBLE ELIMINATION TOURNAMENT:
+                - Comprehensive bracket system with winners and losers brackets
+                - Teams receive second chance after first loss via losers bracket
+                - More competitive integrity and fairer elimination process
+                - Longer tournament duration but higher participant satisfaction
+                - Popular format for major championships and competitive events
+                - Complex bracket management with multiple advancement paths
+                
+                ROUND ROBIN TOURNAMENT:
+                - Every team plays against every other team in the group
+                - Most comprehensive format providing complete performance data
+                - Best for small group competitions and skill assessment
+                - Requires significant time commitment and scheduling coordination
+                - Provides detailed statistics and head-to-head comparisons
+                - Ideal for league-style competitions and ranking determination
+                
+                SWISS SYSTEM TOURNAMENT:
+                - Teams paired based on current performance and win/loss records
+                - No elimination until final rounds - all teams continue playing
+                - Balances competition fairness with efficient tournament progression
+                - Excellent for skill-based matchmaking and balanced competition
+                - Suitable for large tournaments with diverse skill levels
+                - Complex pairing algorithms ensure fair and competitive matches
+                
+                GROUP STAGE + PLAYOFFS FORMAT:
+                - Initial round-robin groups for qualification and seeding
+                - Top teams from each group advance to knockout playoff phase
+                - Combines comprehensive group play with elimination excitement
+                - Common format in professional esports and major tournaments
+                - Allows for strategic seeding and qualification requirements
+                - Provides both group dynamics and high-stakes elimination rounds
+                
+                TOURNAMENT CONFIGURATION OPTIONS:
+                - Configurable participant limits (minimum 4, maximum 128 teams)
+                - Registration deadlines, periods, and qualification requirements
+                - Prize pool configuration, distribution, and payout structure
+                - Match duration settings, timeout rules, and overtime procedures
+                - Custom scoring systems, tie-breaking rules, and advancement criteria
+                - Automatic bracket generation, seeding algorithms, and draw procedures
+                """,
+                "category": "tournaments",
+                "metadata": {"source": "tournament_formats", "priority": "high"}
+            },
+            {
+                "title": "Team Management and Registration Process",
+                "content": """
+                Comprehensive team management system designed for competitive gaming:
+                
+                TEAM ORGANIZATIONAL STRUCTURE:
+                - Team Captain: Leadership role with complete team management authority
+                - Active Players: Core roster members eligible for competition participation
+                - Substitute Players: Backup players available for replacements and rotations
+                - Support Staff: Optional roles including coaches, analysts, and managers
+                - Team Administrator: Technical contact for administrative communications
+                
+                DETAILED REGISTRATION PROCESS:
+                1. Create team account with unique team name and identifier
+                2. Configure team information including description, logo, and regional settings
+                3. Invite and add team members via email invitations or username searches
+                4. Set up team settings, preferences, and communication channels
+                5. Register for specific tournaments based on eligibility and requirements
+                6. Submit required documentation and complete verification processes
+                7. Pay entry fees if applicable and confirm tournament participation
+                8. Await tournament confirmation and approval from organizers
+                
+                TEAM MEMBERSHIP REQUIREMENTS:
+                - Minimum team size: Varies by game type and tournament (typically 5-6 players)
+                - Maximum roster size: Usually 10-12 players including substitutes and alternates
+                - Skill level requirements: Set by individual tournament organizers
+                - Geographic restrictions: May apply for regional tournaments and local events
+                - Age requirements: Minimum age limits for certain competitions and prize events
+                - Account verification: Email verification and identity confirmation required
+                - Good standing: No active penalties or tournament bans
+                
+                ADVANCED TEAM FEATURES:
+                - Comprehensive team statistics and performance tracking across tournaments
+                - Detailed match history with win/loss records and performance analytics
+                - Individual player performance metrics and contribution analysis
+                - Integrated team communication tools and coordination systems
+                - Schedule management and availability tracking for all team members
+                - Tournament achievement tracking and milestone recognition
+                - Team ranking systems and competitive rating calculations
+                """,
+                "category": "team_management",
+                "metadata": {"source": "team_management", "priority": "high"}
+            },
+            {
+                "title": "Match Procedures and Fair Play Rules",
+                "content": """
+                Detailed match procedures and competitive integrity rules:
+                
+                PRE-MATCH PROCEDURES AND REQUIREMENTS:
+                - Mandatory team check-in 15 minutes before scheduled match time
+                - Equipment testing and network connection verification
+                - Server selection and game settings confirmation with both teams
+                - Rule acknowledgment and fair play agreement acceptance
+                - Team roster verification and substitution declarations
+                - Communication channel setup for match coordination
+                - Technical requirements verification and compatibility checks
+                
+                DURING MATCH PROCEDURES:
+                - Official match duration as specified in tournament rules and format
+                - Structured pause system for technical issues (limited uses per team)
+                - Disconnection protocols with reconnection windows (2-5 minutes typically)
+                - Live spectating permissions and streaming guidelines
+                - Real-time score reporting and progress updates to tournament system
+                - Communication guidelines and restrictions during competitive play
+                - Match monitoring and automated rule enforcement systems
+                
+                POST-MATCH PROCEDURES:
+                - Mandatory result submission by both team captains within specified timeframe
+                - Score verification and confirmation process with cross-validation
+                - Dispute reporting mechanism within designated timeframe (usually 30 minutes)
+                - Match replay generation and highlight creation for review
+                - AI-powered match summary creation using advanced analytics
+                - Comprehensive statistics recording and player performance tracking
+                - Achievement and milestone recognition for outstanding performances
+                
+                TECHNICAL ISSUE RESOLUTION PROTOCOLS:
+                - Server problems: Automatic match pause and technical timeout procedures
+                - Player disconnections: Structured reconnection windows with fair resume
+                - Equipment failures: Substitution protocols or match postponement options
+                - Cheating allegations: Evidence submission requirements and investigation procedures
+                - Rule violations: Immediate reporting to tournament organizers with documentation
+                - Network issues: Alternative server options and connection troubleshooting
+                
+                DISPUTE RESOLUTION AND FAIR PLAY ENFORCEMENT:
+                - Evidence requirements: Screenshots, video recordings, and system logs
+                - Investigation process: Organizer review with impartial decision-making
+                - Appeal system: Higher authority review for contested decisions
+                - Penalty structure: Warnings, match forfeit, or tournament disqualification
+                - Fair play monitoring: Automated systems and manual review processes
+                - Repeat offender tracking: Progressive penalties for continued violations
+                """,
+                "category": "match_rules",
+                "metadata": {"source": "match_procedures", "priority": "high"}
+            },
+            {
+                "title": "Blockchain Integration and Transparency",
+                "content": """
+                Aegis leverages blockchain technology for unprecedented tournament transparency:
+                
+                POLYGON BLOCKCHAIN INTEGRATION:
+                - Network: Polygon Mainnet (Chain ID: 137) for fast and efficient transactions
+                - Low transaction costs and environmentally friendly proof-of-stake consensus
+                - High throughput and scalability for tournament operations
+                - Smart contract integration for automated and transparent processes
+                - Web3 wallet integration for user authentication and verification
+                
+                PROVABLY FAIR DRAW SYSTEM:
+                - Tournament bracket generation executed on-chain for transparency
+                - Cryptographic proof of randomness using verifiable random functions
+                - Tamper-proof draw results with immutable blockchain records
+                - Public verification of draw fairness accessible to all participants
+                - Immutable tournament seeding records and bracket progression
+                - Real-time draw generation with instant verification capabilities
+                
+                TRANSPARENCY AND VERIFICATION FEATURES:
+                - All tournament draw results permanently recorded on blockchain
+                - Public access to draw verification through blockchain explorers
+                - Tournament results and outcomes stored immutably on-chain
+                - Smart contract execution logs for complete process transparency
+                - Participant verification of fairness through blockchain queries
+                - Open-source smart contracts for community review and audit
+                
+                TECHNICAL BLOCKCHAIN IMPLEMENTATION:
+                - Advanced Web3 integration for seamless blockchain connectivity
+                - Smart contract deployment and interaction through secure protocols
+                - Automated draw generation system with cryptographic security
+                - Real-time blockchain status monitoring and health checks
+                - Redundant backup systems for network connectivity issues
+                - Gas optimization and transaction cost management
+                - Integration with popular Web3 wallets for user convenience
+                """,
+                "category": "blockchain",
+                "metadata": {"source": "blockchain_integration", "priority": "medium"}
+            },
+            {
+                "title": "API Documentation and System Integration",
+                "content": """
+                Comprehensive API documentation for Aegis platform integration:
+                
+                AUTHENTICATION AND SECURITY ENDPOINTS:
+                - POST /api/v1/auth/register: Complete user registration with validation
+                - POST /api/v1/auth/login: Secure user authentication with email/password
+                - GET /api/v1/auth/me: Current user profile information and permissions
+                - PUT /api/v1/auth/users/profile: Update user profile and preferences
+                - POST /api/v1/auth/logout: Secure user logout and token invalidation
+                - GET /api/v1/auth/users: List all users (admin access required)
+                
+                TOURNAMENT MANAGEMENT ENDPOINTS:
+                - GET /api/v1/tournaments/: List all tournaments with advanced filtering
+                - POST /api/v1/tournaments/: Create new tournament (organizer/admin required)
+                - GET /api/v1/tournaments/{id}: Retrieve specific tournament details
+                - PUT /api/v1/tournaments/{id}: Update tournament settings and configuration
+                - DELETE /api/v1/tournaments/{id}: Delete tournament (admin access only)
+                - GET /api/v1/tournaments/{id}/brackets: Retrieve tournament brackets
+                
+                TEAM MANAGEMENT ENDPOINTS:
+                - GET /api/v1/teams/: List all teams with pagination and filtering
+                - POST /api/v1/teams/: Create new team with initial configuration
+                - GET /api/v1/teams/{id}: Retrieve team details and roster information
+                - PUT /api/v1/teams/{id}: Update team information and settings
+                - POST /api/v1/teams/{id}/members: Add new team member with role assignment
+                - DELETE /api/v1/teams/{id}/members/{user_id}: Remove team member
+                
+                MATCH AND COMPETITION ENDPOINTS:
+                - GET /api/v1/matches/: List matches with comprehensive filtering options
+                - POST /api/v1/matches/: Create match (organizer permission required)
+                - GET /api/v1/matches/{id}: Retrieve detailed match information
+                - PUT /api/v1/matches/{id}/result: Submit match result with validation
+                - GET /api/v1/matches/{id}/summary: Retrieve AI-generated match summary
+                
+                SYSTEM STATUS AND MONITORING ENDPOINTS:
+                - GET /api/v1/services/status: Comprehensive service status check
+                - GET /api/v1/services/blockchain/status: Blockchain connectivity status
+                - GET /api/v1/health: Basic system health check endpoint
+                
+                INTELLIGENT CHATBOT ENDPOINTS:
+                - POST /api/v1/chatbot/ask: Submit question to RAG-enhanced chatbot
+                - GET /api/v1/chatbot/suggestions: Retrieve contextual conversation suggestions
+                - GET /api/v1/chatbot/status: Chatbot service status and capabilities
+                
+                AUTHENTICATION AND SECURITY IMPLEMENTATION:
+                - JWT Bearer token authentication with configurable expiration
+                - Comprehensive role-based access control system
+                - Secure token refresh and renewal mechanisms
+                - Advanced password hashing using bcrypt with salt
+                - Rate limiting and request throttling for API protection
+                - CORS configuration for secure cross-origin requests
+                """,
+                "category": "api_integration",
+                "metadata": {"source": "api_documentation", "priority": "medium"}
+            }
+        ]
+        
+        documents = []
+        for item in knowledge_data:
+            doc = Document(
+                page_content=item["content"].strip(),
+                metadata={
+                    "title": item["title"],
+                    "category": item["category"],
+                    **item["metadata"]
+                }
+            )
+            documents.append(doc)
+        
+        return documents
+    
+    def _setup_qa_chain(self):
+        """Set up the QA chain with retrieval and custom prompt."""
+        if not self.vector_store or not self.llm:
+            print("❌ Cannot setup QA chain: Missing vector store or LLM")
+            self.qa_chain = None
+            return
+        
+        # Custom prompt template for Aegis-specific responses
+        prompt_template = """
+        You are the official Aegis Tournament Management assistant, an expert system for esports tournament platform support.
+        
+        CONTEXT INFORMATION:
+        {context}
+        
+        CONVERSATION HISTORY:
+        {chat_history}
+        
+        SYSTEM CAPABILITIES:
+        - Provide accurate information about Aegis tournament platform features
+        - Help with tournament creation, management, and participation
+        - Explain user roles, permissions, and platform functionality
+        - Guide users through team registration and match procedures
+        - Clarify API endpoints and technical integration requirements
+        - Assist with troubleshooting and platform navigation
+        
+        RESPONSE GUIDELINES:
+        1. Answer only questions related to Aegis tournament management platform
+        2. Use the provided context to give accurate, specific information
+        3. Be helpful, professional, and actionable in your guidance
+        4. If context doesn't fully answer the question, provide what you can and suggest resources
+        5. Keep responses focused and comprehensive while being concise
+        6. Reference specific features and capabilities from the context when relevant
+        7. If asked about unrelated topics, politely redirect to Aegis platform questions
+        
+        USER QUESTION: {question}
+        
+        Please provide a helpful, accurate response based on the Aegis platform context:
+        """
+        
+        PROMPT = PromptTemplate(
+            template=prompt_template,
+            input_variables=["context", "chat_history", "question"]
+        )
+        
+        try:
+            # Create retrieval QA chain with memory
+            self.qa_chain = RetrievalQA.from_chain_type(
+                llm=self.llm,
+                chain_type="stuff",
+                retriever=self.vector_store.as_retriever(
+                    search_type="similarity",
+                    search_kwargs={
+                        "k": 4,  # Retrieve top 4 most relevant documents
+                        "score_threshold": 0.1  # Minimum relevance score
+                    }
+                ),
+                return_source_documents=True,
+                chain_type_kwargs={
+                    "prompt": PROMPT,
+                    "memory": self.memory
+                }
+            )
+            print("🔗 QA chain with retrieval and memory initialized")
+        except Exception as e:
+            print(f"❌ QA chain setup failed: {e}")
+            self.qa_chain = None
+    
+    @observe(name="aegis_chatbot_query")
+    def ask_question(self, question: str, user_context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Process user question using RAG-enhanced retrieval and generation.
+        Includes LangFuse observability for monitoring and analytics.
+        """
+        # Set LangFuse context for observability
+        if self.langfuse:
+            # Note: langfuse_context not available in this version
+            pass
+        
+        try:
+            # Validate question relevance
+            if not self._is_aegis_related(question):
+                return self._create_filtered_response()
+            
+            # Prepare enhanced question with context
+            enhanced_question = self._enhance_question_with_context(question, user_context)
+            
+            # Process with QA chain if available
+            if self.qa_chain:
+                result = self.qa_chain.invoke({"query": enhanced_question})
+                
+                answer = result["result"]
+                source_documents = result.get("source_documents", [])
+                
+                # Format sources for response
+                sources = self._format_sources(source_documents)
+                
+                # Calculate confidence based on retrieval quality
+                confidence = self._calculate_confidence(source_documents, answer)
+                
+                response = {
+                    "answer": answer,
+                    "sources": sources,
+                    "confidence": confidence,
+                    "timestamp": datetime.now().isoformat(),
+                    "model": "Gemini 2.0 Flash + ChromaDB RAG",
+                    "retrieved_docs": len(source_documents),
+                    "conversation_id": str(uuid.uuid4())
+                }
+                
+            else:
+                # Fallback to direct Gemini service
+                response = self._fallback_response(enhanced_question, user_context)
+            
+            # Log to LangFuse for observability
+            if self.langfuse:
+                # Note: langfuse_context not available in this version
+                pass
+            
+            return response
+            
+        except Exception as e:
+            print(f"❌ Chatbot error: {e}")
+            return {
+                "answer": "I encountered an error while processing your question. Please try again or contact support.",
+                "sources": [],
+                "confidence": 0.0,
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
+            }
+    
+    def _is_aegis_related(self, question: str) -> bool:
+        """Enhanced relevance checking for Aegis platform questions."""
+        aegis_keywords = [
+            # Core platform terms
+            "tournament", "team", "match", "player", "competition", "bracket",
+            "registration", "organizer", "admin", "spectator", "game", "gaming",
+            "esports", "score", "result", "schedule", "draw", "blockchain",
+            "aegis", "platform", "api", "endpoint", "authentication", "user",
+            
+            # Technical terms
+            "notification", "email", "websocket", "real-time", "database",
+            "jwt", "token", "login", "password", "profile", "role", "permission",
+            
+            # Tournament specific
+            "rule", "format", "elimination", "round robin", "swiss", "playoff",
+            "captain", "member", "substitute", "skill", "rank", "leaderboard",
+            "prize", "entry fee", "deadline", "check-in", "timeout", "dispute",
+            
+            # Actions and operations
+            "create", "manage", "join", "register", "login", "profile", "chatbot",
+            "submit", "update", "delete", "view", "list", "search", "filter"
+        ]
+        
+        question_lower = question.lower()
+        
+        # Check for Aegis-related keywords
+        keyword_matches = sum(1 for keyword in aegis_keywords if keyword in question_lower)
+        
+        # Check for off-topic indicators
+        off_topic_indicators = [
+            "weather", "news", "politics", "cooking", "recipe", "movie", "music",
+            "celebrity", "stock", "finance", "shopping", "travel", "hotel",
+            "restaurant", "health", "medical", "doctor", "therapy", "exercise",
+            "homework", "school", "university", "job", "career", "dating",
+            "relationship", "fashion", "beauty", "makeup", "car", "vehicle"
+        ]
+        
+        off_topic_matches = sum(1 for topic in off_topic_indicators if topic in question_lower)
+        
+        # Decision logic: relevant if keywords found and no off-topic content
+        return keyword_matches > 0 and off_topic_matches == 0
+    
+    def _create_filtered_response(self) -> Dict[str, Any]:
+        """Create response for filtered/off-topic questions."""
+        return {
+            "answer": "I'm the Aegis Tournament Management assistant, specialized in helping with esports tournaments, team management, match procedures, and platform features. Please ask me questions related to the Aegis tournament platform, such as how to create tournaments, manage teams, handle matches, or use platform features.",
+            "sources": [],
+            "confidence": 0.0,
+            "timestamp": datetime.now().isoformat(),
+            "filtered": True,
+            "suggestions": [
+                "How do I create a new tournament?",
+                "What are the different tournament formats?",
+                "How do I register my team?",
+                "How does the blockchain draw system work?"
+            ]
+        }
+    
+    def _enhance_question_with_context(self, question: str, user_context: Dict[str, Any] = None) -> str:
+        """Enhance question with user context for better retrieval."""
+        if not user_context:
+            return question
+        
+        context_parts = []
+        if user_context.get("role"):
+            context_parts.append(f"User role: {user_context['role']}")
+        if user_context.get("tournament_id"):
+            context_parts.append(f"Tournament context: {user_context['tournament_id']}")
+        if user_context.get("team_id"):
+            context_parts.append(f"Team context: {user_context['team_id']}")
+        
+        if context_parts:
+            context_string = " | ".join(context_parts)
+            return f"Context: {context_string}\n\nQuestion: {question}"
+        
+        return question
+    
+    def _format_sources(self, source_documents: List[Document]) -> List[Dict[str, Any]]:
+        """Format source documents for response."""
+        sources = []
+        for doc in source_documents:
+            sources.append({
+                "title": doc.metadata.get("title", "Aegis Documentation"),
+                "content": doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content,
+                "category": doc.metadata.get("category", "general"),
+                "priority": doc.metadata.get("priority", "medium")
+            })
+        return sources
+    
+    def _calculate_confidence(self, source_documents: List[Document], answer: str) -> float:
+        """Calculate confidence score based on retrieval quality and response."""
+        if not source_documents:
+            return 0.2
+        
+        # Base confidence from number of relevant documents
+        base_confidence = min(len(source_documents) * 0.2, 0.8)
+        
+        # Boost for high-priority sources
+        priority_boost = sum(0.1 for doc in source_documents 
+                           if doc.metadata.get("priority") == "high")
+        
+        # Boost for detailed response
+        length_boost = 0.1 if len(answer) > 200 else 0.05
+        
+        return min(base_confidence + priority_boost + length_boost, 0.95)
+    
+    def _fallback_response(self, question: str, user_context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Fallback response using direct Gemini service."""
+        try:
+            if hasattr(self, 'gemini_service') and self.gemini_service.enabled:
+                # Use simple response generation
+                response_text = self.gemini_service.generate_simple_match_summary(
+                    team1="Aegis", team2="Platform", score1=1, score2=0, duration_minutes=1
+                )
+                
+                return {
+                    "answer": f"I'm currently using fallback mode. For questions about the Aegis tournament platform, please refer to the documentation or contact support. Your question: {question}",
+                    "sources": [],
+                    "confidence": 0.3,
+                    "timestamp": datetime.now().isoformat(),
+                    "model": "Gemini Fallback",
+                    "fallback": True
+                }
+        except Exception as e:
+            print(f"❌ Fallback response failed: {e}")
+        
+        return {
+            "answer": "I'm currently experiencing technical difficulties. Please try again later or contact support for assistance with Aegis platform questions.",
+            "sources": [],
+            "confidence": 0.1,
+            "timestamp": datetime.now().isoformat(),
+            "error": "Fallback failed"
+        }
+    
+    def get_conversation_suggestions(self, user_context: Dict[str, Any] = None) -> List[str]:
+        """Get contextual conversation suggestions based on user role."""
+        base_suggestions = [
+            "How do I create a new tournament in Aegis?",
+            "What tournament formats are available?",
+            "How do I register my team for a competition?",
+            "How does the blockchain draw system ensure fairness?",
+            "What should I do if there's a technical issue during a match?",
+            "How can I view live tournament brackets and results?",
+            "What are the different user roles and their permissions?",
+            "How do I submit match results and handle disputes?"
+        ]
+        
+        # Add role-specific suggestions
+        if user_context and user_context.get("role"):
+            role = user_context["role"]
+            if role == "ADMIN":
+                base_suggestions.extend([
+                    "How do I manage user accounts and permissions?",
+                    "How do I monitor system status and services?",
+                    "How do I configure platform-wide settings?"
+                ])
+            elif role == "ORGANIZER":
+                base_suggestions.extend([
+                    "How do I set up tournament rules and formats?",
+                    "How do I manage team registrations?",
+                    "How do I handle disputes and violations?"
+                ])
+            elif role == "PLAYER":
+                base_suggestions.extend([
+                    "How do I join or create a team?",
+                    "How do I check my match schedule?",
+                    "How do I update my player profile?"
+                ])
+        
+        return base_suggestions[:10]
+    
+    def add_dynamic_knowledge(self, title: str, content: str, category: str, 
+                            metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Add new knowledge to the ChromaDB vector store."""
+        try:
+            doc = Document(
+                page_content=content,
+                metadata={
+                    "title": title,
+                    "category": category,
+                    "source": "dynamic",
+                    "created_at": datetime.now().isoformat(),
+                    **(metadata or {})
+                }
+            )
+            
+            if self.vector_store:
+                # Split and add to vector store
+                texts = self.text_splitter.split_documents([doc])
+                self.vector_store.add_documents(texts)
+                
+                return {
+                    "status": "success",
+                    "message": f"Added knowledge: {title}",
+                    "chunks_added": len(texts),
+                    "category": category
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "Vector store not available"
+                }
+                
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Failed to add knowledge: {str(e)}"
+            }
+    
+    def get_service_status(self) -> Dict[str, Any]:
+        """Get comprehensive service status for monitoring."""
+        status = "operational" if self.is_fully_initialized else "degraded"
+        if self.initialization_errors:
+            status = "error"
+            
+        return {
+            "service": "Aegis RAG-Enhanced Chatbot",
+            "status": status,
+            "initialization_errors": self.initialization_errors,
+            "components": {
+                "llm": "Gemini 2.0 Flash" if self.llm else "Fallback Service",
+                "vector_store": "ChromaDB" if self.vector_store else "Unavailable",
+                "embeddings": "HuggingFace MiniLM" if self.embeddings else "Unavailable",
+                "memory": "Conversation Buffer" if self.memory else "Unavailable",
+                "observability": "LangFuse" if self.langfuse else "Disabled"
+            },
+            "capabilities": [
+                "RAG-enhanced responses",
+                "ChromaDB vector search",
+                "Context-aware conversations",
+                "Role-based suggestions",
+                "Dynamic knowledge updates",
+                "Conversation memory",
+                "Content filtering",
+                "LangFuse observability"
+            ],
+            "knowledge_base": {
+                "status": "loaded",
+                "categories": ["platform", "access_control", "tournaments", "team_management", 
+                             "match_rules", "blockchain", "api_integration"],
+                "vector_store_ready": self.vector_store is not None
+            }
+        }

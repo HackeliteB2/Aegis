@@ -10,19 +10,18 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    router.push('/Auth');
   };
 
   const handleDashboard = () => {
     if (isAdmin) {
-      router.push('/Admin');
+      router.push('/admin');
     } else {
-      router.push('/Dashboard');
+      router.push('/dashboard');
     }
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-green-500/20">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-green-400 tracking-wider">
           AEGIS
@@ -46,13 +45,13 @@ export default function Header() {
           ) : (
             <>
               <Link
-                href="/Auth/Login"
+                href="/auth/login"
                 className="font-medium text-gray-300 hover:text-green-400 transition-colors"
               >
                 Login
               </Link>
               <Link
-                href="/Auth/register" // Assuming a registration page exists
+                href="/auth/register"
                 className="px-4 py-2 border border-green-500 rounded-md text-green-400 hover:bg-green-500 hover:text-black transition-all"
               >
                 Register

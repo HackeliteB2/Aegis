@@ -35,22 +35,31 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 def verify_token(token: str) -> Optional[str]:
-    """Verify a JWT token and return the username."""
+    """Verify a JWT token and return the email."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        email: str = payload.get("sub")
+        if email is None:
             return None
-        return username
+        return email
     except JWTError:
         return None
 
 
-def create_token_response(username: str) -> dict:
+def decode_token(token: str) -> Optional[dict]:
+    """Decode a JWT token and return the payload."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        return payload
+    except JWTError:
+        return None
+
+
+def create_token_response(email: str, user_role: str = None, user_id: str = None) -> dict:
     """Create a token response for successful authentication."""
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": username}, expires_delta=access_token_expires
+        data={"sub": email}, expires_delta=access_token_expires
     )
     
     return {
