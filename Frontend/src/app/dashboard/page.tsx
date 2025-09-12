@@ -47,7 +47,7 @@ const formatSafeDateTime = (dateString: string | null | undefined) => {
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isAdmin, isOrganizer, isLoading, isLoggingOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches' | 'admin-teams'>('overview');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const queryClient = useQueryClient();
 
@@ -287,6 +287,15 @@ export default function DashboardPage() {
                   <EyeIcon className="w-4 h-4 mr-2" />
                   Browse Tournaments
                 </Link>
+                {(isAdmin || isOrganizer) && (
+                  <button
+                    onClick={() => setActiveTab('admin-teams')}
+                    className="flex items-center px-4 py-2 border border-purple-500 text-purple-400 font-bold rounded-md hover:bg-purple-500 hover:text-black transition-colors"
+                  >
+                    <UsersIcon className="w-4 h-4 mr-2" />
+                    Manage All Teams
+                  </button>
+                )}
               </>
             ) : (
               <>
@@ -328,6 +337,7 @@ export default function DashboardPage() {
               { id: 'tournaments', label: 'Tournaments' },
               { id: 'teams', label: 'My Teams' },
               { id: 'matches', label: 'Matches' },
+              ...(isAdmin || isOrganizer ? [{ id: 'admin-teams', label: 'All Teams' }] : []),
             ].map(tab => (
               <button
                 key={tab.id}
@@ -580,6 +590,103 @@ export default function DashboardPage() {
                               View Tournament →
                             </Link>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'admin-teams' && (isAdmin || isOrganizer) && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-green-400">All Teams Management</h3>
+                  <Link
+                    href="/teams"
+                    className="text-blue-400 hover:text-blue-300 text-sm"
+                  >
+                    Browse All →
+                  </Link>
+                </div>
+                
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-800/50 border border-green-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Total Teams</p>
+                        <p className="text-xl font-bold text-green-400">{allTeams.length}</p>
+                      </div>
+                      <UsersIcon className="w-6 h-6 text-green-400/60" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 border border-blue-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Active Teams</p>
+                        <p className="text-xl font-bold text-blue-400">{allTeams.filter(t => t.status === 'active').length}</p>
+                      </div>
+                      <TrophyIcon className="w-6 h-6 text-blue-400/60" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Total Members</p>
+                        <p className="text-xl font-bold text-purple-400">{allTeams.reduce((sum, team) => sum + (team.members?.length || 0), 0)}</p>
+                      </div>
+                      <UsersIcon className="w-6 h-6 text-purple-400/60" />
+                    </div>
+                  </div>
+                </div>
+
+                {allTeams.length === 0 ? (
+                  <p className="text-gray-400">No teams found</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allTeams.slice(0, 9).map(team => (
+                      <div key={team.id} className="bg-gray-800/50 border border-gray-600 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-green-400">{team.name}</h4>
+                          <div className="flex items-center space-x-2">
+                            {team.tag && (
+                              <span className="text-xs bg-gray-700 px-2 py-1 rounded">[{team.tag}]</span>
+                            )}
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              team.status === 'active' 
+                                ? 'bg-green-800 text-green-200' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}>
+                              {team.status}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1 text-sm mb-3">
+                          <p className="text-gray-400">Captain: {team.captain_name || team.captain?.name || 'TBD'}</p>
+                          <p className="text-gray-400">Members: {team.members?.length || 0}</p>
+                          <p className="text-gray-400">Record: {team.wins || 0}-{team.losses || 0}-{team.draws || 0}</p>
+                          <p className="text-gray-400 text-xs">ID: {team.id}</p>
+                        </div>
+
+                        <div className="flex space-x-2">
+                          <Link
+                            href={`/teams/${team.id}`}
+                            className="flex-1 text-blue-400 hover:text-blue-300 text-sm text-center py-1 border border-blue-400/30 rounded hover:bg-blue-400/10 transition-colors"
+                          >
+                            View
+                          </Link>
+                          {team.status === 'active' ? (
+                            <button className="flex-1 text-red-400 hover:text-red-300 text-sm py-1 border border-red-400/30 rounded hover:bg-red-400/10 transition-colors">
+                              Suspend
+                            </button>
+                          ) : (
+                            <button className="flex-1 text-green-400 hover:text-green-300 text-sm py-1 border border-green-400/30 rounded hover:bg-green-400/10 transition-colors">
+                              Activate
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

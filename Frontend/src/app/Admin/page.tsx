@@ -32,7 +32,7 @@ const formatSafeDate = (dateString: string | null | undefined, formatStr: string
 
 export default function AdminDashboard() {
   const { user, isAdmin, isLoading, isLoggingOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tournaments' | 'system'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tournaments' | 'teams' | 'system'>('overview');
 
   const { data: healthResponse } = useQuery({
     queryKey: ['health'],
@@ -239,6 +239,7 @@ export default function AdminDashboard() {
               { id: 'overview', label: 'Overview', icon: ChartBarIcon },
               { id: 'users', label: 'Users', icon: UsersIcon },
               { id: 'tournaments', label: 'Tournaments', icon: TrophyIcon },
+              { id: 'teams', label: 'Teams', icon: ShieldCheckIcon },
               { id: 'system', label: 'System', icon: ServerStackIcon },
             ].map(tab => {
               const Icon = tab.icon;
@@ -425,6 +426,125 @@ export default function AdminDashboard() {
                         <p className="text-gray-400">
                           Start: {formatSafeDate(tournament.start_date)}
                         </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'teams' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-semibold text-green-400">Teams Management</h3>
+                  <Link
+                    href="/teams"
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    View All Teams →
+                  </Link>
+                </div>
+                
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-800/50 border border-green-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Total Teams</p>
+                        <p className="text-xl font-bold text-green-400">{teams.length}</p>
+                      </div>
+                      <UsersIcon className="w-6 h-6 text-green-400/60" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 border border-blue-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Active Teams</p>
+                        <p className="text-xl font-bold text-blue-400">{teams.filter(t => t.status === 'active').length}</p>
+                      </div>
+                      <TrophyIcon className="w-6 h-6 text-blue-400/60" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Total Members</p>
+                        <p className="text-xl font-bold text-purple-400">{teams.reduce((sum, team) => sum + (team.members?.length || 0), 0)}</p>
+                      </div>
+                      <UsersIcon className="w-6 h-6 text-purple-400/60" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 border border-yellow-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm">Inactive Teams</p>
+                        <p className="text-xl font-bold text-yellow-400">{teams.filter(t => t.status === 'inactive').length}</p>
+                      </div>
+                      <ExclamationTriangleIcon className="w-6 h-6 text-yellow-400/60" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {teams.slice(0, 12).map(team => (
+                    <div key={team.id} className="bg-gray-800/50 border border-gray-600 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-green-400 mb-1">{team.name}</h4>
+                          {team.tag && (
+                            <span className="text-xs bg-gray-700 px-2 py-1 rounded mr-2">[{team.tag}]</span>
+                          )}
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            team.status === 'active' 
+                              ? 'bg-green-800 text-green-200' 
+                              : 'bg-red-800 text-red-200'
+                          }`}>
+                            {team.status}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm mb-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">ID:</span>
+                          <span className="text-gray-300">{team.id}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Captain:</span>
+                          <span className="text-gray-300">{team.captain_name || team.captain?.name || 'TBD'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Members:</span>
+                          <span className="text-gray-300">{team.members?.length || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Record:</span>
+                          <span className="text-gray-300">{team.wins || 0}-{team.losses || 0}-{team.draws || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Created:</span>
+                          <span className="text-gray-300">{formatSafeDate(team.created_at, 'MMM dd')}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2 text-xs">
+                        <Link
+                          href={`/teams/${team.id}`}
+                          className="flex-1 text-center py-2 px-3 border border-blue-400/30 text-blue-400 rounded hover:bg-blue-400/10 transition-colors"
+                        >
+                          View Details
+                        </Link>
+                        {team.status === 'active' ? (
+                          <button className="flex-1 py-2 px-3 border border-red-400/30 text-red-400 rounded hover:bg-red-400/10 transition-colors">
+                            Suspend
+                          </button>
+                        ) : (
+                          <button className="flex-1 py-2 px-3 border border-green-400/30 text-green-400 rounded hover:bg-green-400/10 transition-colors">
+                            Activate
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
