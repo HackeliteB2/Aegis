@@ -40,10 +40,11 @@ export default function AdminDashboard() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const { data: usersResponse } = useQuery({
+  const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => authApi.getUsers(0, 100),
     enabled: isAdmin,
+    retry: 3,
   });
 
   const { data: tournamentsResponse } = useQuery({
@@ -350,8 +351,18 @@ export default function AdminDashboard() {
                   </Link>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {users.slice(0, 9).map(user => (
+                {isLoadingUsers ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mr-3"></div>
+                    <span className="text-green-400">Loading users...</span>
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    No users found
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {users.slice(0, 9).map(user => (
                     <div key={user.id} className="bg-gray-800/50 border border-gray-600 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold text-green-400">{user.name}</h4>
@@ -374,7 +385,8 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
