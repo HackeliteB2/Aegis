@@ -94,9 +94,12 @@ export default function RegisterPage() {
 
       <div className="relative z-10 w-full max-w-md mx-auto p-5 space-y-3 bg-gray-900/80 backdrop-blur-sm border border-green-500/30 rounded-xl shadow-2xl shadow-green-500/10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-green-400 tracking-wider">
+          <Link
+            href="/"
+            className="inline-block text-3xl font-bold text-green-400 tracking-wider hover:text-green-300 transition-colors"
+          >
             AEGIS
-          </h1>
+          </Link>
           <p className="text-gray-400 mt-2 text-sm">Create New Account</p>
         </div>
 
