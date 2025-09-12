@@ -53,9 +53,11 @@ export default function AuthPage() {
 
       <div className="relative z-10 w-full max-w-md mx-auto p-8 space-y-8 bg-gray-900/80 backdrop-blur-sm border border-green-500/30 rounded-xl shadow-2xl shadow-green-500/10">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-green-400 tracking-wider">
-            AEGIS
-          </h1>
+          <Link href="/" className="inline-block hover:scale-105 transition-transform">
+            <h1 className="text-4xl font-bold text-green-400 tracking-wider">
+              AEGIS
+            </h1>
+          </Link>
           <p className="text-gray-400 mt-2 text-sm">Secure Access Protocol</p>
         </div>
 
