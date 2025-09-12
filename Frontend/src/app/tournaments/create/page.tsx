@@ -42,6 +42,23 @@ export default function CreateTournamentPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  // Helper function to safely render error messages
+  const renderError = (error: any) => {
+    if (!error) return null;
+    
+    // If it's a string, return it directly
+    if (typeof error.message === 'string') {
+      return error.message;
+    }
+    
+    // If it's an object, try to extract a meaningful message
+    if (typeof error === 'object') {
+      return error.message || error.msg || 'Invalid input';
+    }
+    
+    return 'Invalid input';
+  };
+
   const {
     register,
     handleSubmit,
@@ -62,9 +79,10 @@ export default function CreateTournamentPage() {
     mutationFn: (data: CreateTournamentRequest) => tournamentApi.create(data),
     onSuccess: (response) => {
       if (response.success && response.data) {
-        toast.success('Tournament created successfully!');
+        toast.success(`Tournament '${response.data.name}' created successfully!`);
         queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-        router.push(`/tournaments/${response.data.id}`);
+        // Redirect to tournaments list page since tournament detail page doesn't exist
+        router.push('/tournaments');
       } else {
         toast.error(response.error || 'Failed to create tournament');
       }
@@ -186,7 +204,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.name && (
-                  <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.name)}</p>
                 )}
               </div>
 
@@ -207,7 +225,7 @@ export default function CreateTournamentPage() {
                   ))}
                 </datalist>
                 {errors.game && (
-                  <p className="text-red-400 text-sm mt-1">{errors.game.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.game)}</p>
                 )}
               </div>
             </div>
@@ -247,7 +265,7 @@ export default function CreateTournamentPage() {
                   ))}
                 </select>
                 {errors.format && (
-                  <p className="text-red-400 text-sm mt-1">{errors.format.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.format)}</p>
                 )}
                 <p className="text-gray-400 text-sm mt-2">
                   {formatOptions.find(f => f.value === watch('format'))?.description}
@@ -267,7 +285,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.max_teams && (
-                  <p className="text-red-400 text-sm mt-1">{errors.max_teams.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.max_teams)}</p>
                 )}
                 <p className="text-gray-400 text-sm mt-1">
                   Recommended: 8, 16, 32, or 64 teams
@@ -293,7 +311,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.registration_deadline && (
-                  <p className="text-red-400 text-sm mt-1">{errors.registration_deadline.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.registration_deadline)}</p>
                 )}
               </div>
 
@@ -307,7 +325,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.start_date && (
-                  <p className="text-red-400 text-sm mt-1">{errors.start_date.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.start_date)}</p>
                 )}
               </div>
 
@@ -325,7 +343,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.entry_fee && (
-                  <p className="text-red-400 text-sm mt-1">{errors.entry_fee.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.entry_fee)}</p>
                 )}
                 <p className="text-gray-400 text-sm mt-1">Leave blank or 0 for free tournament</p>
               </div>
@@ -344,7 +362,7 @@ export default function CreateTournamentPage() {
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
                 />
                 {errors.prize_pool && (
-                  <p className="text-red-400 text-sm mt-1">{errors.prize_pool.message}</p>
+                  <p className="text-red-400 text-sm mt-1">{renderError(errors.prize_pool)}</p>
                 )}
               </div>
             </div>
