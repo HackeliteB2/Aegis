@@ -273,13 +273,13 @@ export default function AdminDashboard() {
                       <TrophyIcon className="w-5 h-5 mr-2" />
                       Create Tournament
                     </Link>
-                    <Link
-                      href="/admin/users"
+                    <button
+                      onClick={() => setActiveTab('users')}
                       className="flex items-center justify-center px-4 py-3 border border-blue-500 text-blue-400 font-bold rounded-md hover:bg-blue-500 hover:text-black transition-colors"
                     >
                       <UsersIcon className="w-5 h-5 mr-2" />
                       Manage Users
-                    </Link>
+                    </button>
                     <button className="flex items-center justify-center px-4 py-3 border border-yellow-500 text-yellow-400 font-bold rounded-md hover:bg-yellow-500 hover:text-black transition-colors">
                       <ShieldCheckIcon className="w-5 h-5 mr-2" />
                       System Diagnostics
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-green-400">User Management</h3>
                   <span className="text-gray-500 text-sm">
-                    Showing first 9 users
+                    Total: {users.length} users
                   </span>
                 </div>
                 
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {users.slice(0, 9).map(user => (
+                    {users.map(user => (
                     <div key={user.id} className="bg-gray-800/50 border border-gray-600 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold text-green-400">{user.name}</h4>
