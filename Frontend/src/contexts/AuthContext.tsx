@@ -140,22 +140,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setIsLoggingOut(true);
     
-    // Clear authentication data
-    localStorage.removeItem('aegis_token');
-    localStorage.removeItem('aegis_user');
-    setToken(null);
-    setUser(null);
-    
-    // Optional: Call logout endpoint
+    // Optional: Call logout endpoint first
     if (token) {
       authApi.logout().catch(console.error);
     }
     
-    // Redirect to login page
-    router.push('/auth/login');
+    // Redirect to login page immediately (replace to prevent back navigation)
+    router.replace('/auth/login');
     
-    // Reset logging out state after navigation
-    setTimeout(() => setIsLoggingOut(false), 100);
+    // Clear authentication data after navigation starts
+    setTimeout(() => {
+      localStorage.removeItem('aegis_token');
+      localStorage.removeItem('aegis_user');
+      setToken(null);
+      setUser(null);
+      setIsLoggingOut(false);
+    }, 50);
   };
 
   const isAuthenticated = !!(user && token);

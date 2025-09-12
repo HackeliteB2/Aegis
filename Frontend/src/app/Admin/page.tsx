@@ -91,7 +91,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAdmin) {
+  // Don't show access denied if we're logging out
+  if (!isAdmin && !isLoggingOut) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <MatrixBackground />
