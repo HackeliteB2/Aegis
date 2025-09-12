@@ -42,7 +42,7 @@ const formatSafeDateTime = (dateString: string | null | undefined) => {
 };
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isAdmin, isOrganizer } = useAuth();
+  const { user, isAuthenticated, isAdmin, isOrganizer, isLoading, isLoggingOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'tournaments' | 'teams' | 'matches'>('overview');
 
   const { data: tournamentsResponse } = useQuery({
@@ -67,6 +67,32 @@ export default function DashboardPage() {
   const teams = teamsResponse?.data || [];
   const matches = matchesResponse?.data || [];
 
+  // Show loading during initial load or logout - prioritize logout state
+  if (isLoggingOut) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400">Logging out...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show access denied if not loading and not logging out
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
