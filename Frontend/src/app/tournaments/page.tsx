@@ -12,9 +12,11 @@ import {
   UsersIcon, 
   ClockIcon,
   MagnifyingGlassIcon,
-  FunnelIcon 
+  FunnelIcon,
+  ArrowLeftIcon 
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 const TournamentCard: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const formatSafeDate = (dateString: string | null | undefined) => {
@@ -127,6 +129,7 @@ const TournamentCard: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
 };
 
 export default function TournamentsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<Tournament['status'] | 'all'>('all');
   const [filterGame, setFilterGame] = useState<string>('all');
@@ -169,13 +172,23 @@ export default function TournamentsPage() {
       <Header />
       
       <div className="relative z-10 container mx-auto px-4 py-8 pt-24">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-green-400 tracking-wider mb-4">
-            Tournaments
-          </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Discover and join esports tournaments with blockchain-verified fairness
-          </p>
+        <div className="mb-12">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-green-400 hover:text-green-300 transition-colors mb-6 group"
+          >
+            <ArrowLeftIcon className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </button>
+          
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-green-400 tracking-wider mb-4">
+              Tournaments
+            </h1>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Discover and join esports tournaments with blockchain-verified fairness
+            </p>
+          </div>
         </div>
 
         {/* Filters */}
