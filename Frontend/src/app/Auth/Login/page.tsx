@@ -154,7 +154,19 @@ export default function AuthPage() {
           </div>
         </form>
         
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <div className="border-t border-gray-700/50 pt-4">
+            <p className="text-sm text-gray-400 mb-2">
+              Need access to the system?
+            </p>
+            <Link
+              href="/auth/register"
+              className="inline-block text-green-400 hover:text-green-300 transition-colors font-medium"
+            >
+              Request Account Registration →
+            </Link>
+          </div>
+          
           <p className="text-xs text-gray-500">
             Unauthorized access is strictly prohibited. All activities are monitored.
           </p>
