@@ -77,7 +77,11 @@ pip install -r requirements.txt
 
 # Set up environment variables
 copy .env.example .env
-# Edit .env with your database credentials
+# Edit .env file with your configuration:
+# - Database credentials (PostgreSQL)
+# - API keys (Gemini, SendGrid, LangFuse)
+# - Security settings (SECRET_KEY)
+# - CORS origins for frontend
 
 # Run backend server
 python run.py
@@ -107,10 +111,84 @@ Frontend will be available at: `http://localhost:3003`
 
 ### 4. Database Setup
 
-Create a PostgreSQL database named `aegis_db` and update your `.env` file with the connection details:
+1. **Install PostgreSQL** 15+ on your system
+2. **Create database and user**:
+   ```sql
+   CREATE DATABASE aegis_db;
+   CREATE USER aegis_user WITH ENCRYPTED PASSWORD 'your_password';
+   GRANT ALL PRIVILEGES ON DATABASE aegis_db TO aegis_user;
+   ```
+3. **Update `.env` file** with connection details:
+   ```env
+   DATABASE_URL=postgresql://aegis_user:your_password@localhost:5432/aegis_db
+   ```
 
+### 5. External Services Setup (Optional but Recommended)
+
+#### AI Services (Gemini 2.0 Flash)
+1. Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Add to `.env`: `GEMINI_API_KEY=your_key_here`
+
+#### Email Services (SendGrid)
+1. Sign up at [SendGrid](https://sendgrid.com/)
+2. Create API key and verify sender email
+3. Add to `.env`:
+   ```env
+   SENDGRID_API_KEY=your_key_here
+   SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+   ```
+
+#### Blockchain (Polygon)
+1. Get RPC URL from [Polygon](https://polygon.technology/) or [Alchemy](https://www.alchemy.com/)
+2. Create Ethereum wallet for tournament operations
+3. Add to `.env`:
+   ```env
+   POLYGON_RPC_URL=https://polygon-rpc.com
+   PRIVATE_KEY=your_ethereum_private_key
+   ```
+
+#### RAG Chatbot (LangFuse - Optional)
+1. Sign up at [LangFuse](https://cloud.langfuse.com/)
+2. Create project and get API keys
+3. Add to `.env`:
+   ```env
+   LANGFUSE_PUBLIC_KEY=your_langfuse_public_key
+   LANGFUSE_SECRET_KEY=your_langfuse_secret_key
+   LANGFUSE_HOST=https://cloud.langfuse.com
+   ```
+
+### Complete Backend .env Example
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/aegis_db
+# Database Configuration
+DATABASE_URL=postgresql://aegis_user:your_password@localhost:5432/aegis_db
+
+# Security
+SECRET_KEY=your-super-secret-jwt-key-here-make-it-long-and-secure
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# AI Services
+GEMINI_API_KEY=your-google-gemini-api-key-here
+
+# Email Services
+SENDGRID_API_KEY=your-sendgrid-api-key-here
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Blockchain
+POLYGON_RPC_URL=https://polygon-rpc.com
+PRIVATE_KEY=your-ethereum-private-key-for-blockchain-operations
+
+# CORS Configuration
+BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3003","https://yourdomain.com"]
+
+# App Configuration
+APP_NAME=Aegis Backend
+DEBUG=True
+API_V1_STR=/api/v1
+
+# RAG Chatbot Configuration (Optional)
+LANGFUSE_PUBLIC_KEY=your-langfuse-public-key
+LANGFUSE_SECRET_KEY=your-langfuse-secret-key
+LANGFUSE_HOST=https://cloud.langfuse.com
 ```
 
 ## 📁 Project Structure
@@ -272,6 +350,58 @@ Interactive API documentation is available at:
 - **Swagger UI**: `http://localhost:8001/docs`
 - **ReDoc**: `http://localhost:8001/redoc`
 
+## 🔧 Troubleshooting
+
+### Environment Setup Issues
+
+#### Backend Issues
+```bash
+# Database connection error
+# Check if PostgreSQL is running and database exists
+psql -U postgres -c "SELECT 1;"
+createdb aegis_db
+
+# Missing API keys
+# Verify all required environment variables are set
+python -c "import os; print('GEMINI_API_KEY:', bool(os.getenv('GEMINI_API_KEY')))"
+
+# Port already in use
+# Backend automatically tries ports 8001, 8000, 8002
+netstat -an | findstr :8001
+```
+
+#### Frontend Issues
+```bash
+# API connection error
+# Verify backend is running and accessible
+curl http://localhost:8001/api/v1/health
+
+# Environment variables not loaded
+# Check .env.local file exists and has correct format
+cat .env.local
+
+# Build errors
+# Clear Next.js cache and reinstall
+rm -rf .next node_modules package-lock.json
+npm install
+```
+
+#### Common Error Solutions
+
+1. **"Database does not exist"**
+   ```sql
+   CREATE DATABASE aegis_db;
+   ```
+
+2. **"CORS policy error"**
+   - Add frontend URL to `BACKEND_CORS_ORIGINS` in backend `.env`
+
+3. **"Invalid JWT token"**
+   - Clear browser localStorage and login again
+
+4. **"Service unavailable"**
+   - Check if all required API keys are configured
+
 ## 🚀 Deployment
 
 ### Production Environment
@@ -281,22 +411,20 @@ Interactive API documentation is available at:
 3. **Database**: Set up PostgreSQL with proper security
 4. **CORS**: Configure allowed origins for frontend domain
 
-### Environment Variables
+### Production Environment Variables
 
-#### Backend (.env)
-```env
-DATABASE_URL=postgresql://user:pass@host:port/aegis_db
-SECRET_KEY=your-secret-key
-GEMINI_API_KEY=your-gemini-api-key
-SENDGRID_API_KEY=your-sendgrid-key
-POLYGON_RPC_URL=your-polygon-rpc-url
-```
+For production deployment, update the following in your `.env` files:
 
-#### Frontend (.env.local)
-```env
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com/api/v1
-NEXT_PUBLIC_WS_URL=https://api.yourdomain.com
-```
+#### Backend Production
+- Set `DEBUG=False`
+- Use production database URL
+- Configure proper CORS origins
+- Use HTTPS URLs for all services
+
+#### Frontend Production
+- Update API URLs to production endpoints
+- Remove localhost references
+- Configure proper domain settings
 
 ## 📈 Monitoring & Analytics
 
