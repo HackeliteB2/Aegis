@@ -87,6 +87,7 @@ export interface Team {
   description?: string;
   captain_id: number;
   captain: User;
+  captain_name?: string;
   members: TeamMember[];
   created_at: string;
   updated_at?: string;

@@ -41,7 +41,7 @@ const TeamCard: React.FC<{ team: Team }> = ({ team }) => {
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-gray-300 text-sm">
           <UsersIcon className="w-4 h-4 mr-2" />
-          <span>Captain: {team.captain?.name || 'TBD'}</span>
+          <span>Captain: {team.captain_name || team.captain?.name || 'TBD'}</span>
         </div>
         
         <div className="flex items-center text-gray-300 text-sm">

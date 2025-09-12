@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,17 @@ export default function CreateTeamPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Check if user is already a captain of a team
+  const { data: allTeamsResponse, isLoading: isLoadingMyTeams } = useQuery({
+    queryKey: ['all-teams'],
+    queryFn: () => teamApi.list({ skip: 0, limit: 100 }),
+    enabled: isAuthenticated,
+  });
+
+  const allTeams = allTeamsResponse?.data || [];
+  const isCaptainOfTeam = allTeams.some(team => team.captain_id === user?.id);
+  const captainedTeam = allTeams.find(team => team.captain_id === user?.id);
 
   const {
     register,
@@ -68,6 +79,47 @@ export default function CreateTeamPage() {
           <Link href="/auth/login" className="text-green-400 hover:text-green-300">
             Login →
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingMyTeams) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400">Checking your teams...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCaptainOfTeam) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
+        <MatrixBackground />
+        <div className="relative z-10 text-center max-w-md mx-4">
+          <h1 className="text-2xl text-yellow-400 mb-4">Already a Team Captain</h1>
+          <p className="text-gray-400 mb-6">
+            You are already the captain of <strong className="text-green-400">{captainedTeam?.name}</strong>. 
+            You can only captain one team at a time.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href={`/teams/${captainedTeam?.id}`}
+              className="px-6 py-3 bg-green-500 text-black font-bold rounded-md hover:bg-green-400 transition-colors"
+            >
+              View My Team
+            </Link>
+            <Link
+              href="/dashboard"
+              className="px-6 py-3 border border-gray-500 text-gray-400 font-bold rounded-md hover:bg-gray-500 hover:text-black transition-colors"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     );

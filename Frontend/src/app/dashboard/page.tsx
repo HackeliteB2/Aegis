@@ -57,9 +57,10 @@ export default function DashboardPage() {
     enabled: isAuthenticated,
   });
 
-  const { data: teamsResponse } = useQuery({
-    queryKey: ['teams'],
-    queryFn: () => teamApi.list({ skip: 0, limit: 10 }),
+  // Fetch all teams to filter for user's teams
+  const { data: allTeamsResponse } = useQuery({
+    queryKey: ['all-teams'],
+    queryFn: () => teamApi.list({ skip: 0, limit: 100 }),
     enabled: isAuthenticated,
   });
 
@@ -70,8 +71,30 @@ export default function DashboardPage() {
   });
 
   const tournaments = tournamentsResponse?.data || [];
-  const teams = teamsResponse?.data || [];
+  const allTeams = allTeamsResponse?.data || [];
   const matches = matchesResponse?.data || [];
+
+  // Filter teams where user is a member (captain or player)
+  const teams = allTeams.filter(team => {
+    if (!user?.id) return false;
+    
+    // User is captain - check by ID and by name as fallback
+    if (team.captain_id === user.id) return true;
+    if (team.captain?.id === user.id) return true;
+    if (team.captain_name === user.name) return true;
+    if (team.captain?.name === user.name) return true;
+    
+    // User is a member
+    if (team.members && team.members.length > 0) {
+      return team.members.some(member => 
+        member.user_id === user.id || 
+        member.user?.id === user.id ||
+        member.user?.name === user.name
+      );
+    }
+    
+    return false;
+  });
 
   // Role upgrade mutation
   const becomeOrganizerMutation = useMutation({
@@ -303,7 +326,7 @@ export default function DashboardPage() {
             {[
               { id: 'overview', label: 'Overview' },
               { id: 'tournaments', label: 'Tournaments' },
-              { id: 'teams', label: 'Teams' },
+              { id: 'teams', label: 'My Teams' },
               { id: 'matches', label: 'Matches' },
             ].map(tab => (
               <button
@@ -458,17 +481,28 @@ export default function DashboardPage() {
             {activeTab === 'teams' && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-green-400">Teams</h3>
+                  <h3 className="text-lg font-semibold text-green-400">My Teams</h3>
                   <Link
                     href="/teams"
                     className="text-blue-400 hover:text-blue-300 text-sm"
                   >
-                    View all →
+                    Browse All →
                   </Link>
                 </div>
                 
                 {teams.length === 0 ? (
-                  <p className="text-gray-400">No teams found</p>
+                  <div className="text-center py-12">
+                    <UsersIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <h3 className="text-xl text-gray-400 mb-2">No teams yet</h3>
+                    <p className="text-gray-500 mb-6">Create your first team or join an existing one to get started!</p>
+                    <Link
+                      href="/teams/create"
+                      className="inline-flex items-center px-6 py-3 bg-green-500 text-black font-bold rounded-md hover:bg-green-400 transition-colors"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-2" />
+                      Create Team
+                    </Link>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {teams.slice(0, 6).map(team => (
@@ -481,7 +515,7 @@ export default function DashboardPage() {
                         </div>
                         
                         <div className="space-y-1 text-sm mb-3">
-                          <p className="text-gray-400">Captain: {team.captain?.name || 'TBD'}</p>
+                          <p className="text-gray-400">Captain: {team.captain_name || team.captain?.name || 'TBD'}</p>
                           <p className="text-gray-400">Members: {team.members?.length || 0}</p>
                           <p className="text-gray-400">Record: {team.wins || 0}-{team.losses || 0}-{team.draws || 0}</p>
                         </div>
