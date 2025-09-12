@@ -89,18 +89,18 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center relative overflow-hidden font-mono">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center relative overflow-hidden font-mono py-8">
       <MatrixBackground />
 
-      <div className="relative z-10 w-full max-w-md mx-auto p-8 space-y-8 bg-gray-900/80 backdrop-blur-sm border border-green-500/30 rounded-xl shadow-2xl shadow-green-500/10">
+      <div className="relative z-10 w-full max-w-md mx-auto p-5 space-y-3 bg-gray-900/80 backdrop-blur-sm border border-green-500/30 rounded-xl shadow-2xl shadow-green-500/10">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-green-400 tracking-wider">
+          <h1 className="text-3xl font-bold text-green-400 tracking-wider">
             AEGIS
           </h1>
           <p className="text-gray-400 mt-2 text-sm">Create New Account</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div>
             <label
               htmlFor="name"
